@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<!-- $Id: build.xml 710 2014-01-21  Chan $ -->
+
+<project name="stare" default="compile" basedir="."> 
+
+  <target name="init">
+    <tstamp><format locale="fr,fr" pattern="dd/MM/yyyy" property="TODAY"/></tstamp>
+    <property name="doing" value="running"/>
+    <property name="version" value="1"/>
+    <property name="date" value="${TODAY}"/>
+    <property name="login" value=""/>
+    <property name="email" value=""/>
+    <property name="libdir"  value="lib" />
+    <property name="debug" value="off"/>
+    <!-- This should now be handled by GForge -->
+    <property name="FTPDir" value=""/>
+    <property name="classpath"  value="classes"/>
+    
+    <filter token="DATE" value="${date}"/>
+    <filter token="VERS" value="${version}"/>
+    
+    <path id="classpath">
+      <fileset dir="./lib">
+	<include name="*.jar"/>
+      </fileset>
+    </path>
+    
+  </target>
+
+  
+  <target name="compile" depends="init">
+    <echo message="Compiling..."/>
+    <property name="javacargs" value="-deprecation" />
+    <javac deprecation="yes" nowarn="no" verbose="no" srcdir="src" destdir="classes">
+      <compilerarg value="${javacargs}"/>
+      <classpath refid="classpath"/>
+    </javac>
+  </target>
+
+  <!-- tested -->
+  <target name="compileall" depends="init">
+    <echo message="Erasing..."/>
+    <delete>
+      <fileset dir="classes" includes="**/*.class"/>
+    </delete>
+    <antcall target="cleanjar"/>
+    <antcall target="jar"/>
+  </target>
+
+
+  <target name="jar" depends="compile">
+    <echo message="jarchiving..."/>
+  
+    <delete file="stare.jar"/>
+    <jar jarfile="lib/stare.jar">
+      <manifest>
+	<attribute name="Built-Date" value="${TODAY}"/>
+        <attribute name="Main-Class" value="fr.paris8.iut.info.stare.Reasoner"/>
+        <attribute name="Class-Path" value="${jarclasspath}"/>
+      </manifest>
+      <fileset dir="classes" includes="fr/paris8/iut/info/stare/**/*.class"/>
+      <!--<fileset dir="classes" includes="fr/inrialpes/exmo/iddl/types/**/*.class"/> -->
+    </jar>
+  </target>
+
+  <target name="cleanjar" depends="init">
+    <echo message="Erasing..."/>
+    <delete file="lib/stare.jar"/>
+  </target>
+ 
+</project>
