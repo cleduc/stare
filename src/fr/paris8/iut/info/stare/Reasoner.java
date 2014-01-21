@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
+package fr.paris8.iut.info.stare;
  
 import java.net.URI;
 import java.util.Map;
@@ -35,28 +36,7 @@ import java.util.Enumeration;
 import java.io.File;
 import java.io.IOException;
 
-import org.semanticweb.owl.align.AlignmentVisitor;
-import org.semanticweb.owl.align.Cell;
-import org.semanticweb.owl.align.Alignment;
-import org.semanticweb.owl.align.AlignmentException;
-import org.semanticweb.owl.align.Relation;
-
-
-import fr.inrialpes.exmo.align.impl.renderer.OWLAxiomsRendererVisitor;
-import fr.inrialpes.exmo.ontowrap.LoadedOntology;
-import fr.inrialpes.exmo.ontowrap.Ontology;
-import fr.inrialpes.exmo.ontowrap.OntologyFactory;
-import fr.inrialpes.exmo.ontowrap.OntowrapException;
-import fr.inrialpes.exmo.align.parser.AlignmentParser;
-import fr.inrialpes.exmo.align.impl.ObjectAlignment;
-import fr.inrialpes.exmo.align.impl.BasicAlignment;
-import fr.inrialpes.exmo.align.impl.URIAlignment;
-import fr.inrialpes.exmo.align.impl.rel.EquivRelation;
-import fr.inrialpes.exmo.align.impl.rel.IncompatRelation;
-import fr.inrialpes.exmo.align.impl.rel.SubsumedRelation;
-import fr.inrialpes.exmo.align.impl.rel.SubsumeRelation;
-import fr.inrialpes.exmo.align.impl.rel.HasInstanceRelation;
-import fr.inrialpes.exmo.align.impl.rel.InstanceOfRelation;
+ 
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
@@ -145,11 +125,11 @@ public class Reasoner implements OWLReasoner {
 	}
  	
 	public boolean isConsistent() {
- 	       return null;
+ 	       return false;
 	}
 	
 	public boolean isEntailed( OWLAxiom cons )    {
-	       return null;	   
+	       return false;	   
 	}
 	 
 

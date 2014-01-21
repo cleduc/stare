@@ -7,7 +7,11 @@ The specific feature of STARE is to build compressed models which are founded on
 A good way to contribute to the project is to install "git" on your computer.
 
 
-To checkout ot update from the project, run :
+To checkout from the project, run :
+
+$ git clone https://github.com/cleduc/star-type-based-reasoner.git  
+
+To update from the project, run :
 
 $ git pull https://github.com/cleduc/star-type-based-reasoner.git  
 

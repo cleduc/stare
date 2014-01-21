@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
+package fr.paris8.iut.info.stare;
 
 
 import java.net.URI;
@@ -33,8 +34,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Enumeration;
 
+import fr.paris8.iut.info.stare.ConceptLabel;
+import fr.paris8.iut.info.stare.Ray;
+import fr.paris8.iut.info.stare.RoleLabel;
+import fr.paris8.iut.info.stare.Concept;
 
-public StarType {
+public class  StarType {
        //identity
        private int id;
        
@@ -45,33 +50,37 @@ public StarType {
        HashSet<Ray> rays; 
 
        //Creation with an id
-       StarType(int id);
+       StarType(int id) { }
 
        //Creation with a core label 
-       StarType(int id, ConceptLabel cb);
+       StarType(int id, ConceptLabel cb) {}
 
        //Creation with a ray = (edge + tip)
-       StarType(int id, ConceptLabel cb, RoleLabel edge, ConceptLabel tip);
+       StarType(int id, ConceptLabel cb, RoleLabel edge, ConceptLabel tip) {}
        
        //modify core concept
-       void setCore(Concept co);
+       void setCore(Concept co) {}
 
        //modify a ray
-       void setRay(Ray ray);
+       void setRay(Ray ray) {}
 
        //add a new ray : ensure that all rays are different
-       void addRay(Ray ray);
+       void addRay(Ray ray) {}
 
        //check if the startype is semantically valid  
-       boolean checkValidity();
+       boolean checkValidity() {
+          return false;
+	}
 
        //Check if the startype matches another startype "rt" over a ray "r" of "st"  
        //It returns a ray of the startype that matches "r", ou null
-       Ray match(StarType st, Ray r);
+       Ray match(StarType st, Ray r){ return null;}
 
        //Check if the startype with a ray "r1" matches another startype "rt" with a ray r2    
        //It returns a ray of the startype that matches "r", ou null
-       boolean match(Ray r1, StarType st, Ray r2);
+       boolean match(Ray r1, StarType st, Ray r2){
+	return false;	
+	}
 
 }
 
