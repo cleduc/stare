@@ -21,25 +21,31 @@
 
 package fr.paris8.iut.info.stare;
 
-//import org.semanticweb.owlapi.model.OWLRuntimeException;
-//import org.semanticweb.owl.align.AlignmentException;
-import java.lang.Exception;
-
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
  
-public class STAREException extends Exception {
+import org.semanticweb.owlapi.reasoner.FreshEntityPolicy;
+import org.semanticweb.owlapi.reasoner.IndividualNodeSetPolicy;
+import org.semanticweb.owlapi.reasoner.OWLReasonerConfiguration;
+import org.semanticweb.owlapi.reasoner.ReasonerProgressMonitor;
 
-    private static final long serialVersionUID = 999;
+public class Configuration implements Serializable,Cloneable,OWLReasonerConfiguration {
+    private static final long serialVersionUID=7741510316249774519L;
 
-    public STAREException( String message )
-    {
-	super( message );
+     
+    public static enum DirectBlockingType {
+         
+        PAIR_WISE,
+         
+        OPTIMAL
     }
-    
-    public STAREException( String message, Exception e )
-    {
-	super( message, e );
-    }
-    
+
 }
-

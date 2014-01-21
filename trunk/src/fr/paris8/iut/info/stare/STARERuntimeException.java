@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
-package fr.paris8.iut.info.iddl;
+package fr.paris8.iut.info.stare;
 
 //import org.semanticweb.owlapi.model.OWLRuntimeException;
 //import org.semanticweb.owl.align.AlignmentException;
