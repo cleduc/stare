@@ -73,11 +73,11 @@ public class  StarType {
 	}
 
        //Check if the startype matches another startype "rt" over a ray "r" of "st"  
-       //It returns a ray of the startype that matches "r", ou null
+       //It returns a ray of the startype that matches "r", or null
        Ray match(StarType st, Ray r){ return null;}
 
        //Check if the startype with a ray "r1" matches another startype "rt" with a ray r2    
-       //It returns a ray of the startype that matches "r", ou null
+       //It returns a ray of the startype that matches "r", or null
        boolean match(Ray r1, StarType st, Ray r2){
 	return false;	
 	}
