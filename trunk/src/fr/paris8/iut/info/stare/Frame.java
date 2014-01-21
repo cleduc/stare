@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
-
+package fr.paris8.iut.info.stare;
 
 import java.net.URI;
 import java.util.Map;
@@ -33,14 +33,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Enumeration;
 
+import fr.paris8.iut.info.stare.StarType;
+import fr.paris8.iut.info.stare.Frame;
 
-public Frame {
+public class  Frame {
        //identity
        private int id;
         
-       HashSet<StarType> stars
+       HashSet<StarType> stars;
        //Creation with an id
-       Frame(int id);
+       Frame(int id) { }
  
 }
 

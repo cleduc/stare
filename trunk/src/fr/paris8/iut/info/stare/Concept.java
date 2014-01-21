@@ -33,8 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Enumeration;
 
-// internal representation : inverse, transitive, transitive closure
-public class  Role {
+// internal representation :  a formula
+public class  Concept {
         
 
 }

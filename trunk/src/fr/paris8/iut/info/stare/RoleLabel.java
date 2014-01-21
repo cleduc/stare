@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
+package fr.paris8.iut.info.stare;
 
 import java.net.URI;
 import java.util.Map;
@@ -33,7 +34,7 @@ import java.util.List;
 import java.util.Enumeration;
 
 // a set of roles
-public RoleLabel {
+public class  RoleLabel {
        
 
 }
