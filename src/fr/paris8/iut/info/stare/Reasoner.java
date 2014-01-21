@@ -114,12 +114,19 @@ import org.semanticweb.owlapi.reasoner.ReasonerInterruptedException;
 import org.semanticweb.owlapi.reasoner.TimeOutException;
 import org.semanticweb.owlapi.reasoner.ClassExpressionNotInProfileException;
 import org.semanticweb.owlapi.reasoner.AxiomNotInProfileException;
- 
+import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
  
 
 public class Reasoner implements OWLReasoner {
   
+	protected final Configuration configuration = null;
+    	//protected final OWLOntology initOntology;
+    	 
+    	//protected InternalOntology interOntology;
+    	 
+        //protected Tableau m_tableau;
+
 	public Reasoner(OWLOntology onto) {
  		 
 	}
@@ -132,6 +139,11 @@ public class Reasoner implements OWLReasoner {
 	       return false;	   
 	}
 	 
+	//
+	public boolean checkForExpressiveness ( ) {
+	       return false;
+               //AxiomType
+	}
 
 	public void dispose() {
 		// TODO Auto-generated method stub	

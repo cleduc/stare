@@ -4,13 +4,20 @@ A Star-type based Reasoner (STARE)
 STARE is an OWL reasoner, i.e., it offers main inference services over an OWL ontology such as consistency checking, entailment and query answering. 
 The specific features of STARE are 
 
-(i) to implement an algorithm that uses a compressed structure for representing a model of an ontology. Instead of unfolding all individuals of a model, the algorithm groups those that have the same structure, namely a star-type. A frame that is tiled from star-types represents a model of the ontology.  
+(1) implementating an algorithm that uses a compressed structure for representing a model of an ontology. Instead of unfolding all individuals of a model, the algorithm groups those that have the same structure, namely a star-type. A frame that is tiled from star-types represents a model of the ontology.  
 
-(ii) to use a database for storage of individuals and concept 
+(2) using of a database for storing and retrieving individuals and concepts 
 
-(iii) to store a model for applications 
+(3) dealing with some features that are beyond FOL, for instance, transitive closure of relations
 
-(iv) to allow a human-reasoner interactive  interface 
+(4) storing a model for applications 
+
+(5) revising an ontology
+
+(6) allowing a human-reasoner interaction when reasoning
+
+ 
+===================================
 
 To compile the whole project, run 
 

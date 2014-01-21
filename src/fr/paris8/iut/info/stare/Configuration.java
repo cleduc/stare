@@ -40,12 +40,31 @@ import org.semanticweb.owlapi.reasoner.ReasonerProgressMonitor;
 public class Configuration implements Serializable,Cloneable,OWLReasonerConfiguration {
     private static final long serialVersionUID=7741510316249774519L;
 
-     
+    public IndividualNodeSetPolicy individualNodeSetPolicy;
+    public FreshEntityPolicy freshEntityPolicy;
+    public long individualTaskTimeout;
+    public ReasonerProgressMonitor reasonerProgressMonitor;
+
     public static enum DirectBlockingType {
          
         PAIR_WISE,
          
         OPTIMAL
     }
+
+    public IndividualNodeSetPolicy getIndividualNodeSetPolicy() {
+		return individualNodeSetPolicy;
+	}
+
+    public FreshEntityPolicy getFreshEntityPolicy() {
+		return freshEntityPolicy;
+	}
+
+    public long getTimeOut() {
+        return individualTaskTimeout;
+    }
+    public ReasonerProgressMonitor getProgressMonitor() {
+		return reasonerProgressMonitor;
+	}
 
 }
