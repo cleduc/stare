@@ -24,4 +24,8 @@ To compile the whole project, run
 $ ant compileall
 
 
+Then, one can test an implemented class by add ding some code to trunk/test/src/*.java, and run
+
+$ ant test
+
 
