@@ -21,23 +21,74 @@
 
 package fr.paris8.iut.info.stare;
 
-import java.net.URI;
-import java.util.Map;
-import java.util.Hashtable;
-import java.util.Properties;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Vector;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Enumeration;
-
-import fr.paris8.iut.info.stare.RoleLabel;
-import fr.paris8.iut.info.stare.ConceptLabel;
 // a ray of a StarType
-public class  Ray {
-       RoleLabel rl;
-       ConceptLabel cl;
+public class Ray {
+	private int id;
+	private RoleLabel rl;
+	private ConceptLabel cl;
+	private static int increment = 0;
 
+	public Ray(RoleLabel rl, ConceptLabel cl) {
+		this.id = increment;
+		this.rl = rl;
+		this.cl = cl;
+		increment++;
+	}
+
+	/**
+	 * Creation with single labels.
+	 * 
+	 * @param r
+	 *            The role to add to the edge.
+	 * @param c
+	 *            The concept to add to the tip.
+	 */
+	public Ray(Role r, Concept c) {
+		this.id = increment;
+		this.rl = new RoleLabel();
+		this.cl = new ConceptLabel();
+
+		rl.add(r);
+		cl.add(c);
+		increment++;
+	}
+
+	public boolean matches(Role role, Concept c) {
+		if (this.rl.contains(role))
+			if (this.cl.contains(c))
+				return true;
+		return false;
+	}
+
+	public void addRole(Role r) {
+		rl.add(r);
+	}
+
+	public boolean addConcept(Concept c) {
+		return cl.add(c);
+	}
+
+	public RoleLabel getRidge() {
+		return rl;
+	}
+
+	public ConceptLabel getTip() {
+		return cl;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public Ray fusion(Ray ray2) {
+		RoleLabel rl = new RoleLabel();
+		ConceptLabel cl = new ConceptLabel();
+
+		rl.addAll(this.getRidge());
+		rl.addAll(ray2.getRidge());
+		cl.addAll(this.getTip());
+		cl.addAll(ray2.getTip());
+
+		return new Ray(rl, cl);
+	}
 }

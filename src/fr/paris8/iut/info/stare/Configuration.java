@@ -21,49 +21,42 @@
 
 package fr.paris8.iut.info.stare;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
- 
 import org.semanticweb.owlapi.reasoner.FreshEntityPolicy;
 import org.semanticweb.owlapi.reasoner.IndividualNodeSetPolicy;
 import org.semanticweb.owlapi.reasoner.OWLReasonerConfiguration;
 import org.semanticweb.owlapi.reasoner.ReasonerProgressMonitor;
 
-public class Configuration implements Serializable,Cloneable,OWLReasonerConfiguration {
-    private static final long serialVersionUID=7741510316249774519L;
+public class Configuration implements Serializable, Cloneable,
+		OWLReasonerConfiguration {
+	private static final long serialVersionUID = 7741510316249774519L;
 
-    public IndividualNodeSetPolicy individualNodeSetPolicy;
-    public FreshEntityPolicy freshEntityPolicy;
-    public long individualTaskTimeout;
-    public ReasonerProgressMonitor reasonerProgressMonitor;
+	public IndividualNodeSetPolicy individualNodeSetPolicy;
+	public FreshEntityPolicy freshEntityPolicy;
+	public long individualTaskTimeout;
+	public ReasonerProgressMonitor reasonerProgressMonitor;
 
-    public static enum DirectBlockingType {
-         
-        PAIR_WISE,
-         
-        OPTIMAL
-    }
+	public static enum DirectBlockingType {
 
-    public IndividualNodeSetPolicy getIndividualNodeSetPolicy() {
+		PAIR_WISE,
+
+		OPTIMAL
+	}
+
+	public IndividualNodeSetPolicy getIndividualNodeSetPolicy() {
 		return individualNodeSetPolicy;
 	}
 
-    public FreshEntityPolicy getFreshEntityPolicy() {
+	public FreshEntityPolicy getFreshEntityPolicy() {
 		return freshEntityPolicy;
 	}
 
-    public long getTimeOut() {
-        return individualTaskTimeout;
-    }
-    public ReasonerProgressMonitor getProgressMonitor() {
+	public long getTimeOut() {
+		return individualTaskTimeout;
+	}
+
+	public ReasonerProgressMonitor getProgressMonitor() {
 		return reasonerProgressMonitor;
 	}
 

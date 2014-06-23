@@ -21,20 +21,33 @@
 
 package fr.paris8.iut.info.stare;
 
-import java.net.URI;
-import java.util.Map;
-import java.util.Hashtable;
-import java.util.Properties;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Vector;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Enumeration;
 
 // a set of concepts
-public class ConceptLabel {
-       
+public class ConceptLabel extends HashSet<Concept> {
+	private static final long serialVersionUID = 1L;
+	private int identifier = -1;
 
+	public boolean equals(ConceptLabel other) {
+		Iterator<Concept> it1 = this.iterator();
+		Iterator<Concept> it2 = other.iterator();
+		
+		if(this.size() != other.size())
+			return false;
+		
+		while(it1.hasNext())
+			if(it1.next().equals(it2.next()))
+				return false;
+		
+		return true;
+	}
+	
+	public void setIdentifier(int id){
+		this.identifier = id;
+	}
+	
+	public int getIdentifier(){
+		return this.identifier;
+	}
 }

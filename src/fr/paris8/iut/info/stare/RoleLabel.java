@@ -21,20 +21,57 @@
 
 package fr.paris8.iut.info.stare;
 
-import java.net.URI;
-import java.util.Map;
-import java.util.Hashtable;
-import java.util.Properties;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Vector;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Enumeration;
 
 // a set of roles
-public class  RoleLabel {
-       
+public class RoleLabel extends HashSet<Role> {
+	private static final long serialVersionUID = 1L;
+	private int identifier = -1;
 
+	public boolean contains(Role role) {
+		for (Role r : this)
+			if (r.equals(role))
+				return true;
+		return false;
+	}
+
+	public boolean equals(RoleLabel other) {
+		Iterator<Role> it1 = this.iterator();
+		Iterator<Role> it2 = other.iterator();
+
+		if (this.size() != other.size())
+			return false;
+
+		while (it1.hasNext())
+			if (it1.next().equals(it2.next()))
+				return false;
+
+		return true;
+	}
+
+	public boolean isInverseOf(RoleLabel roleLabel) {
+		Role inverse;
+
+		if (roleLabel.size() != this.size())
+			return false;
+
+		for (Role role : roleLabel) {
+			inverse = new Role(role.getName(), -1, role.isTransitive,
+					role.isTransitive, !role.isInverse,
+					role.isTransitiveClosure);
+			if (!this.contains(inverse))
+				return false;
+		}
+		return true;
+	}
+
+	public void setIdentifier(int id) {
+		this.identifier = id;
+	}
+
+	public int getIdentifier() {
+		return this.identifier;
+	}
 }
+
