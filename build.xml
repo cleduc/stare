@@ -12,6 +12,7 @@
     <property name="email" value=""/>
     <property name="libdir"  value="lib" />
     <property name="debug" value="off"/>
+    <property name="tooldir"  value="tools" />
     <!-- This should now be handled by GForge -->
     <property name="FTPDir" value=""/>
     <property name="classpath"  value="classes"/>
@@ -62,6 +63,43 @@
       <!--<fileset dir="classes" includes="fr/inrialpes/exmo/iddl/types/**/*.class"/> -->
     </jar>
   </target>
+
+  <target name="test" depends="init" description="Unit test code">
+    <echo message="Testing..."/>
+    <taskdef name="testng" classpath="${tooldir}/testng/testng.jar" classname="org.testng.TestNGAntTask" />
+
+    <javac srcdir="test/src" includeantruntime="false" destdir="test/classes" debug="on"
+	   classpath="tools/testng/testng.jar" encoding="iso8859-15">
+      <classpath refid="classpath"/>
+    </javac>
+    <!-- possible groups: raw=impl+serv+io+onto+omwg, full=raw+ling+sem -->
+    <!-- ling requires WordNet and takes ages initialising it -->
+   <!-- sourcedir="test/src" -->
+    <testng groups="raw"
+	    outputDir="test/html"  verbose="1"
+	    haltOnFailure="false" failureProperty="failed">
+      <classpath>
+        <path refid="classpath"/>
+        <pathelement location="test/classes"/>
+      </classpath>
+      <!--xmlfileset dir="${test14.dir}" includes="testng.xml"/-->
+      <classfileset dir="test" includes="classes/**/*.class"/>
+    </testng>
+    <fail if="failed" message="For results: open test/html/index.html" />
+  </target>
+
+  <!-- tested -->
+  <target name="cleantest" depends="init" description="Clean up test directory">
+    <echo message="Cleaning tests..."/>
+    <delete>
+      <fileset dir="test/classes" includes="**/*.class"/>
+      <fileset dir="test/output" includes="**/*.*"/>
+      <fileset dir="test/html" includes="**/*.html,**/*.xml,**/*.css"/>
+    </delete>
+    <delete dir="test/html/Ant suite"/>
+  </target>
+
+
 
   <target name="cleanjar" depends="init">
     <echo message="Erasing..."/>
