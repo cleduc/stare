@@ -23,18 +23,21 @@ package fr.paris8.iut.info.stare;
 
 import java.util.HashSet;
 
-public class Frame {
+public class SHIQTFrame {
 	// identity
 	private int id;
 
 	HashSet<Startype> stars;
 
 	// Creation with an id
-	Frame(int id) {
+	SHIQTFrame(int id) {
 	}
 	
 	public int getId(){
 		return id;
 	}
 
+        void addStartype(Startype star) {
+             
+        }
 }

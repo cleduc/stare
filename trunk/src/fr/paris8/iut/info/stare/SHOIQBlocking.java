@@ -23,18 +23,15 @@ package fr.paris8.iut.info.stare;
 
 import java.util.HashSet;
 
-public class Frame {
-	// identity
-	private int id;
-
-	HashSet<Startype> stars;
+public class SHOIQBlocking {
+	SHOIQFrame frame;
 
 	// Creation with an id
-	Frame(int id) {
+	SHOIQBlocking() {
 	}
 	
-	public int getId(){
-		return id;
-	}
+        boolean isBlocked(){
+              return false;
+        }
 
 }

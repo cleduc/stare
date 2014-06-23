@@ -21,20 +21,11 @@
 
 package fr.paris8.iut.info.stare;
 
-import java.util.HashSet;
+public class ObjectRole extends Role {
 
-public class Frame {
-	// identity
-	private int id;
-
-	HashSet<Startype> stars;
-
-	// Creation with an id
-	Frame(int id) {
+	public ObjectRole(String name, int property, boolean transitive,
+			boolean functional, boolean inverse, boolean closure) {
+		super(name, property, transitive, functional, inverse, closure);
+		// TODO Auto-generated constructor stub
 	}
-	
-	public int getId(){
-		return id;
-	}
-
 }

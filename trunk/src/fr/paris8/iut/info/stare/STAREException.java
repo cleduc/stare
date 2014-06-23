@@ -25,21 +25,16 @@ package fr.paris8.iut.info.stare;
 //import org.semanticweb.owl.align.AlignmentException;
 import java.lang.Exception;
 
-
- 
 public class STAREException extends Exception {
 
-    private static final long serialVersionUID = 999;
+	private static final long serialVersionUID = 999;
 
-    public STAREException( String message )
-    {
-	super( message );
-    }
-    
-    public STAREException( String message, Exception e )
-    {
-	super( message, e );
-    }
-    
+	public STAREException(String message) {
+		super(message);
+	}
+
+	public STAREException(String message, Exception e) {
+		super(message, e);
+	}
+
 }
-
