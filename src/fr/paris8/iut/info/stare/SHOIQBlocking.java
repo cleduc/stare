@@ -21,7 +21,6 @@
 
 package fr.paris8.iut.info.stare;
 
-import java.util.HashSet;
 
 public class SHOIQBlocking {
 	SHOIQFrame frame;

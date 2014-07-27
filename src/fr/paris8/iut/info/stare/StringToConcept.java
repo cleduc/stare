@@ -171,7 +171,8 @@ public class StringToConcept {
 		Concept concept;
 
 		if (!isOperator(top)) {
-			concept = giveConceptIdentifier(new Concept(top, -2, false), data);
+			concept = data.giveConceptIdentifier(new Concept(top, -2, false,
+					false));
 
 			data.addConcept(concept);
 			return concept;
@@ -179,20 +180,20 @@ public class StringToConcept {
 			if (top.equals("NOT")) {
 				return new Concept(Type.COMPLEMENT, makeConcept(data));
 			} else if (top.equals("SOME")) {
-				role = giveRoleIdentifier(new Role(stack.pop(), -2, false,
-						false, false, false), data);
-				concept = giveConceptIdentifier(new Concept(Type.SOME, role,
-						makeConcept(data)), data);
+				role = data.giveRoleIdentifier(new Role(stack.pop(), -2, false,
+						false, false, false));
+				concept = data.giveConceptIdentifier(new Concept(Type.SOME,
+						role, makeConcept(data)));
 
 				data.addRole(role);
 				data.addConcept(concept);
 
 				return concept;
 			} else if (top.equals("ALL")) {
-				role = giveRoleIdentifier(new Role(stack.pop(), -2, false,
-						false, false, false), data);
-				concept = giveConceptIdentifier(new Concept(Type.ALL, role,
-						makeConcept(data)), data);
+				role = data.giveRoleIdentifier(new Role(stack.pop(), -2, false,
+						false, false, false));
+				concept = data.giveConceptIdentifier(new Concept(Type.ALL,
+						role, makeConcept(data)));
 
 				data.addRole(role);
 				data.addConcept(concept);
@@ -200,10 +201,10 @@ public class StringToConcept {
 				return concept;
 			} else if (top.equals("MAX")) {
 				int cardinality = Integer.parseInt(stack.pop());
-				role = giveRoleIdentifier(new Role(stack.pop(), -2, false,
-						false, false, false), data);
-				concept = giveConceptIdentifier(new Concept(Type.MAX,
-						cardinality, role, makeConcept(data)), data);
+				role = data.giveRoleIdentifier(new Role(stack.pop(), -2, false,
+						false, false, false));
+				concept = data.giveConceptIdentifier(new Concept(Type.MAX,
+						cardinality, role, makeConcept(data)));
 
 				data.addRole(role);
 				data.addConcept(concept);
@@ -211,11 +212,11 @@ public class StringToConcept {
 				return concept;
 			} else if (top.equals("MIN")) {
 				int cardinality = Integer.parseInt(stack.pop());
-				role = giveRoleIdentifier(new Role(stack.pop(), -2, false,
-						false, false, false), data);
-				concept = giveConceptIdentifier(new Concept(Type.MIN,
-						cardinality, role, makeConcept(data)), data);
-				
+				role = data.giveRoleIdentifier(new Role(stack.pop(), -2, false,
+						false, false, false));
+				concept = data.giveConceptIdentifier(new Concept(Type.MIN,
+						cardinality, role, makeConcept(data)));
+
 				data.addRole(role);
 				data.addConcept(concept);
 
@@ -225,8 +226,8 @@ public class StringToConcept {
 
 				left = makeConcept(data);
 				right = makeConcept(data);
-				concept = giveConceptIdentifier(new Concept(Type.UNION, left,
-						right), data);
+				concept = data.giveConceptIdentifier(new Concept(Type.UNION,
+						left, right));
 
 				data.addConcept(concept);
 
@@ -236,8 +237,8 @@ public class StringToConcept {
 
 				left = makeConcept(data);
 				right = makeConcept(data);
-				concept = giveConceptIdentifier(new Concept(Type.INTERSECTION,
-						left, right), data);
+				concept = data.giveConceptIdentifier(new Concept(
+						Type.INTERSECTION, left, right));
 
 				data.addConcept(concept);
 
@@ -262,42 +263,5 @@ public class StringToConcept {
 				|| (string.equals("NOT")))
 			return true;
 		return false;
-	}
-
-	/**
-	 * Gives an identifier to a newly created Concept.
-	 * 
-	 * @param concept
-	 *            The Concept to be identified.
-	 * @return The Concept, with a valid identifier.
-	 */
-	private static Concept giveConceptIdentifier(Concept concept,
-			ReasonerData data) {
-		for (Concept c : data.getConcept().values()) {
-			if (c.equals(concept)) {
-				concept.setIdentifier(c.getIdentifier());
-				return concept;
-			}
-		}
-		concept.setIdentifier(data.getConcept().size());
-		return concept;
-	}
-
-	/**
-	 * Gives an identifier to a newly created Role.
-	 * 
-	 * @param role
-	 *            The Role to be identified.
-	 * @return The Role, with a valid identifier.
-	 */
-	private static Role giveRoleIdentifier(Role role, ReasonerData data) {
-		for (Role r : data.getRoles().values()) {
-			if (r.equals(role)) {
-				role.setIdentifier(r.getIdentifier());
-				return role;
-			}
-		}
-		role.setIdentifier(data.getRoles().size());
-		return role;
 	}
 }

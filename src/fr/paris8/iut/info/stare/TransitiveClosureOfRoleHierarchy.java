@@ -135,4 +135,13 @@ public class TransitiveClosureOfRoleHierarchy {
 	public Collection<RoleAxiom> getTransitiveClosure() {
 		return closure;
 	}
+
+	public List<Role> getSubsumers(Role role) {
+	       List<Role> subsumers = new ArrayList<Role>();
+	       for(RoleAxiom ax : this.closure ){
+		   if(ax.getLeftRole().equals(role)) 
+		      subsumers.add(ax.getRightRole());
+		}
+	       return subsumers;
+	}
 }
