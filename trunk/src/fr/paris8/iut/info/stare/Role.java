@@ -88,6 +88,10 @@ public class Role {
 		}
 	}
 
+	public void setInverse(boolean value) {
+		this.isInverse = value;
+	}
+
 	/**
 	 * Simple getter for the value.
 	 * 
@@ -142,6 +146,57 @@ public class Role {
 		return name;
 	}
 
+	/**
+	 * Checks if the role is an inverse of another one.
+	 * 
+	 * @param other
+	 *            The possible inverse.
+	 * @return true if both roles are inverses, false otherwise.
+	 */
+	public boolean isInverseOf(Role other) {
+		if(this.getName() == null || other.getName() == null)
+		   return false;
+		if( name.equals(other.getName()) ) {
+                    if(this.isInverse() && !other.isInverse())
+                       return true;
+		    if(!this.isInverse() && other.isInverse())
+                       return true;
+		}
+
+		return false;
+		/*
+		if (isFunctional != other.isFunctional)
+			return false;
+		if (isInverse == other.isInverse)
+			return false;
+		if (isTransitive != other.isTransitive)
+			return false;
+		if (isTransitiveClosure != other.isTransitiveClosure)
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		return true;
+		*/
+	}
+
+	public Role getInverseOf(Role ini, ReasonerData data) {
+		Role rl = new Role(ini.getName(), -1, ini.isTransitive(), ini.isFunctional(), ini.isInverse(), ini.isTransitiveClosure());
+		if(ini.isInverse()){
+		   rl = data.giveRoleIdentifier(rl);
+		   rl.setInverse(false);
+		} else {
+		   rl = data.giveRoleIdentifier(rl);
+		   rl.setInverse(true);
+		}
+		data.addRole(rl);
+		return rl;
+	}
+
+	
+
 	@Override
 	public String toString() {
 		StringBuilder string = new StringBuilder(name + " ");
@@ -160,12 +215,15 @@ public class Role {
 
 	@Override
 	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
 		if (obj == null)
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
+
 		Role other = (Role) obj;
-		if ((identifier > 0) && (other.identifier >0))
+		if ((identifier >= 0) && (other.identifier >= 0))
 			if (identifier == other.identifier)
 				return true;
 		if (isFunctional != other.isFunctional)
@@ -176,9 +234,8 @@ public class Role {
 			return false;
 		if (isTransitiveClosure != other.isTransitiveClosure)
 			return false;
-		if (name == null) {
-			if (other.name != null)
-				return false;
+		if (name == null || other.name == null) {
+			return false;
 		} else if (!name.equals(other.name))
 			return false;
 		return true;

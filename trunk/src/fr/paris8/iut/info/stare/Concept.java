@@ -52,7 +52,7 @@ public class Concept {
 	/** The operator for the concept, if it is not terminal */
 	private Type operator;
 	/** The identifier of the concept, */
-	private Integer identifier;
+	private int identifier;
 	/** The cardinality of the operator, if it is MIN or MAX */
 	private int cardinality;
 	private Role role;
@@ -77,17 +77,38 @@ public class Concept {
 	 *            Its identifier.
 	 * @param isDatatype
 	 *            Defines if the terminal is a DataType.
+	 * @param isNominal
+	 *            Defines if the startype is nominal.
 	 */
-	public Concept(String name, Integer identifier, boolean isDatatype) {
-		this.isTerminal = true;
-		this.isDatatype = isDatatype;
-		this.identifier = identifier;
+	public Concept(String name, Integer identifier, boolean isDatatype,
+			boolean isNominal) {
 		this.name = name;
-		this.cardinality = -1;
+		this.role = null;
 		this.operator = null;
 		this.children = null;
+		this.cardinality = -1;
+		this.isTerminal = true;
+		this.isNominal = isNominal;
+		this.isDatatype = isDatatype;
+		this.identifier = identifier;
+	}
+
+	/**
+	 * Constructor for a nominal non-singleton concept.
+	 * 
+	 * @param children
+	 *            The individual represented by the concept.
+	 */
+	public Concept(Concept... children) {
 		this.role = null;
-		this.isNominal = false;
+		this.name = null;
+		this.operator = null;
+		this.isNominal = true;
+		this.cardinality = -1;
+		this.isTerminal = false;
+		this.isDatatype = false;
+		this.identifier = -1;
+		this.children = new ArrayList<Concept>(Arrays.asList(children));
 	}
 
 	/**
@@ -99,15 +120,15 @@ public class Concept {
 	 *            The arguments of the anonymous class.
 	 */
 	public Concept(Type type, Concept... children) {
-		this.children = new ArrayList<Concept>(Arrays.asList(children));
-		this.operator = type;
-		this.isTerminal = false;
-		this.isDatatype = false;
-		this.cardinality = -1;
-		this.identifier = null;
 		this.role = null;
 		this.name = null;
+		this.operator = type;
+		this.cardinality = -1;
+		this.identifier = -1;
 		this.isNominal = false;
+		this.isTerminal = false;
+		this.isDatatype = false;
+		this.children = new ArrayList<Concept>(Arrays.asList(children));
 	}
 
 	/**
@@ -122,15 +143,15 @@ public class Concept {
 	 *            The arguments of the anonymous class.
 	 */
 	public Concept(Type type, Role role, Concept... children) {
-		this.children = new ArrayList<Concept>(Arrays.asList(children));
-		this.operator = type;
-		this.isTerminal = false;
-		this.isDatatype = false;
-		this.cardinality = -1;
-		this.identifier = null;
 		this.role = role;
 		this.name = null;
+		this.operator = type;
+		this.cardinality = -1;
 		this.isNominal = false;
+		this.identifier = -1;
+		this.isTerminal = false;
+		this.isDatatype = false;
+		this.children = new ArrayList<Concept>(Arrays.asList(children));
 	}
 
 	/**
@@ -147,15 +168,15 @@ public class Concept {
 	 *            The arguments of the anonymous class.
 	 */
 	public Concept(Type type, int cardinality, Role role, Concept... children) {
-		this.children = new ArrayList<Concept>(Arrays.asList(children));
-		this.operator = type;
-		this.cardinality = cardinality;
-		this.isTerminal = false;
-		this.isDatatype = false;
-		this.identifier = null;
 		this.role = role;
 		this.name = null;
+		this.operator = type;
+		this.identifier = -1;
 		this.isNominal = false;
+		this.isTerminal = false;
+		this.isDatatype = false;
+		this.cardinality = cardinality;
+		this.children = new ArrayList<Concept>(Arrays.asList(children));
 	}
 
 	/**
@@ -278,17 +299,32 @@ public class Concept {
 			return false;
 		Concept node = (Concept) obj;
 
+		/* both concepts have valid and equals identifiers */
+		if ((this.getIdentifier() >= 0) && (node.getIdentifier() >= 0))
+			if (this.getIdentifier() == node.getIdentifier())
+				return true;
+
 		/* both terminals */
 		if (this.isTerminal && node.isTerminal) {
-			if ((this.getIdentifier() >= 0) && (node.getIdentifier() >= 0))
-				if (this.getIdentifier() == node.getIdentifier())
-					return true;
 			if (this.getName().equals(node.getName()))
 				return true;
+
 			return false;
 		}
 		/* both non terminals */
 		else if (!this.isTerminal && !node.isTerminal) {
+			/* for nominal non singleton */
+			if (this.isNominal) {
+				if (node.isNominal
+						&& (this.children.size() == node.children.size())) {
+					for (Concept child : this.children)
+						if (!node.getChildren().contains(child))
+							return false;
+					return true;
+				} else
+					return false;
+			}
+
 			switch (this.operator) {
 			case ALL:
 				/* same operator */
@@ -304,11 +340,12 @@ public class Concept {
 				/* same operator */
 				if (node.getOperator() == Type.SOME)
 					/* same roles */
-					if (this.getRole().equals(node.getRole()))
+					if (this.getRole().equals(node.getRole())) {
 						/* same members */
 						if (this.getChildren().get(0)
 								.equals(node.getChildren().get(0)))
 							return true;
+					}  
 				return false;
 			case MAX:
 				/* same operator & cardinality */
@@ -326,11 +363,12 @@ public class Concept {
 				if ((node.getOperator() == Type.MIN)
 						&& (node.getCardinality() == this.getCardinality()))
 					/* same roles */
-					if (this.getRole().equals(node.getRole()))
+					if (this.getRole().equals(node.getRole())) { 
 						/* same members */
 						if (this.getChildren().get(0)
 								.equals(node.getChildren().get(0)))
 							return true;
+					}  
 				return false;
 			case INTERSECTION:
 				/* same operator */
@@ -426,36 +464,58 @@ public class Concept {
 	 *            The concept to apply the complement.
 	 * @return The concept under NNF.
 	 */
-	public static Concept negate(Concept concept) {
-		if (concept.isTerminal)
-			return new Concept(Type.COMPLEMENT, concept);
-		else {
+	public static Concept negate(Concept concept, ReasonerData data) {
+		Concept c;
+		if (concept.isTerminal) {
+			c = data.giveConceptIdentifier(new Concept(Type.COMPLEMENT, concept));
+			data.addConcept(c);
+			return c;
+		} else {
 			switch (concept.getOperator()) {
 			case COMPLEMENT:
 				return concept.getChildren().get(0);
 			case UNION:
-				return new Concept(Type.INTERSECTION, negate(concept
-						.getChildren().get(0)), negate(concept.getChildren()
-						.get(0)));
+				c = data.giveConceptIdentifier(new Concept(Type.INTERSECTION,
+						negate(concept.getChildren().get(0), data), negate(
+								concept.getChildren().get(0), data)));
+				data.addConcept(c);
+				return c;
 			case INTERSECTION:
-				return new Concept(Type.UNION, negate(concept.getChildren()
-						.get(0)), negate(concept.getChildren().get(0)));
+				c = data.giveConceptIdentifier(new Concept(Type.UNION, negate(
+						concept.getChildren().get(0), data), negate(concept
+						.getChildren().get(0), data)));
+				data.addConcept(c);
+				return c;
 			case SOME:
-				return new Concept(Type.ALL, concept.getRole(), negate(concept
-						.getChildren().get(0)));
+				c = data.giveConceptIdentifier(new Concept(Type.ALL, concept
+						.getRole(), negate(concept.getChildren().get(0), data)));
+				data.addConcept(c);
+				return c;
 			case ALL:
-				return new Concept(Type.SOME, concept.getRole(), negate(concept
-						.getChildren().get(0)));
+				c = data.giveConceptIdentifier(new Concept(Type.SOME, concept
+						.getRole(), negate(concept.getChildren().get(0), data)));
+				data.addConcept(c);
+				return c;
 			case MIN:
-				if (concept.getCardinality() == 1)
-					return new Concept(Type.ALL, concept.getRole(),
-							negate(concept.getChildren().get(0)));
-				else
-					return new Concept(Type.MAX, concept.getCardinality() - 1,
-							concept.getRole(), concept.getChildren().get(0));
+				if (concept.getCardinality() == 1) {
+					c = data.giveConceptIdentifier(new Concept(Type.ALL,
+							concept.getRole(), negate(concept.getChildren()
+									.get(0), data)));
+					data.addConcept(c);
+					return c;
+				} else {
+					c = data.giveConceptIdentifier(new Concept(Type.MAX,
+							concept.getCardinality() - 1, concept.getRole(),
+							concept.getChildren().get(0)));
+					data.addConcept(c);
+					return c;
+				}
 			case MAX:
-				return new Concept(Type.MIN, concept.getCardinality() + 1,
-						concept.getRole(), concept.getChildren().get(0));
+				c = data.giveConceptIdentifier(new Concept(Type.MIN, concept
+						.getCardinality() + 1, concept.getRole(), concept
+						.getChildren().get(0)));
+				data.addConcept(c);
+				return c;
 			default:
 				return null;
 			}
