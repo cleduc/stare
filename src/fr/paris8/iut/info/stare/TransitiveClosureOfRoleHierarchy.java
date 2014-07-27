@@ -3,7 +3,8 @@ package fr.paris8.iut.info.stare;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
+import java.util.Set;
+import java.util.HashSet;
 /**
  * Representation of the transitive closure for the roles. A transitive closure
  * can be calculated for an ontology.
@@ -132,16 +133,31 @@ public class TransitiveClosureOfRoleHierarchy {
 	 * 
 	 * @return The transitive closure.
 	 */
-	public Collection<RoleAxiom> getTransitiveClosure() {
+	public Collection<RoleAxiom> getTransitiveClosureOfRoleHierarchy() {
 		return closure;
 	}
 
-	public List<Role> getSubsumers(Role role) {
-	       List<Role> subsumers = new ArrayList<Role>();
+	public void setLeftRightIds(ReasonerData data) {
+	       for(RoleAxiom ax : closure){
+		   Role l = ax.getLeftRole();
+		   Role r = ax.getRightRole();
+		   data.addRole(l);
+	           data.addRole(r);
+		   ax.setLeftId(l.getIdentifier());
+		   ax.setRightId(r.getIdentifier());
+	       } 
+	}
+
+	public Set<Integer> getSubsumers(Integer role, ReasonerData data) {
+	       Set<Integer> subsumers = new HashSet<Integer>();
 	       for(RoleAxiom ax : this.closure ){
-		   if(ax.getLeftRole().equals(role)) 
-		      subsumers.add(ax.getRightRole());
-		}
+		   if(ax.getLeftId().equals(role) ) 
+		      subsumers.add(ax.getRightId());
+	       }
 	       return subsumers;
+	}
+	
+	public Collection<RoleAxiom> getClosure() {
+		return closure;
 	}
 }

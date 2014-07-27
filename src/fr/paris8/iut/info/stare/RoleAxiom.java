@@ -32,6 +32,7 @@ package fr.paris8.iut.info.stare;
 public class RoleAxiom {
 	private int identifier;
 	private Role leftRole, rightRole;
+	private Integer leftId = -1, rightId = -1;
 
 	public RoleAxiom(int id, Role left, Role right) {
 		this.identifier = id;
@@ -66,6 +67,22 @@ public class RoleAxiom {
 
 	public Role getRightRole() {
 		return rightRole;
+	}
+
+	public Integer getLeftId() {
+		return leftId;
+	}
+
+	public void setLeftId(Integer id) {
+		leftId = id;
+	}
+
+	public Integer getRightId() {
+		return rightId;
+	}
+
+	public void setRightId(Integer id) {
+		rightId = id;
 	}
 
 	@Override
