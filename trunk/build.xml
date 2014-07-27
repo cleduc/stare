@@ -11,7 +11,7 @@
     <property name="login" value=""/>
     <property name="email" value=""/>
     <property name="libdir"  value="lib" />
-    <property name="debug" value="off"/>
+    <property name="debug" value="on"/>
     <property name="tooldir"  value="tools" />
     <!-- This should now be handled by GForge -->
     <property name="FTPDir" value=""/>
@@ -32,7 +32,7 @@
   <target name="compile" depends="init">
     <echo message="Compiling..."/>
     <property name="javacargs" value="-deprecation" />
-    <javac deprecation="yes" nowarn="no" verbose="no" srcdir="src" destdir="classes">
+    <javac deprecation="yes" nowarn="no" verbose="no" srcdir="src" destdir="classes" debug="on">
       <compilerarg value="${javacargs}"/>
       <classpath refid="classpath"/>
     </javac>
@@ -68,7 +68,7 @@
     <echo message="Testing..."/>
     <taskdef name="testng" classpath="${tooldir}/testng/testng.jar" classname="org.testng.TestNGAntTask" />
 
-    <javac srcdir="test/src" includeantruntime="false" destdir="test/classes" debug="on"
+    <javac srcdir="test/src" includeantruntime="false" destdir="test/classes" debug="on" 
 	   classpath="tools/testng/testng.jar" encoding="iso8859-15">
       <classpath refid="classpath"/>
     </javac>
