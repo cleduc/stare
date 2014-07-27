@@ -134,7 +134,7 @@ public class LoadOntology {
 		}
 		reasonerData.addCore(allNNF);
 		reasonerData.setNNFConceptLabel(allNNF.getIdentifier());
-		reasonerData.setTransitiveClosure(new TransitiveClosureOfRoleHierarchy(
+		reasonerData.setTransitiveClosureOfRoleHierarchy(new TransitiveClosureOfRoleHierarchy(
 				reasonerData.getRoleAxioms().values(), getStandardRoles()));
 	}
 

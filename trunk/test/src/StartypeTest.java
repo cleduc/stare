@@ -80,9 +80,6 @@ public class StartypeTest {
 
       LoadOntology onto = new LoadOntology(onto1); 
       ReasonerData data = onto.getData();
-      Map<Integer, Concept> concepts =  data.getConcepts();
-      ConceptLabel cLabel = new ConceptLabel();
-      
 
       Frame frame = new Frame(0);
       Startype star1 = frame.init(data);

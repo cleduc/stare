@@ -23,7 +23,7 @@ public class ReasonerData {
 	/** The role axioms, once they have been transformed */
 	private Map<Integer, RoleAxiom> roleAxioms;
 	/** Representation of the transitive closure of the ontology */
-	private TransitiveClosureOfRoleHierarchy transitiveClosure;
+	private TransitiveClosureOfRoleHierarchy transitiveClosureOfRoleHierarchy;
 
 	/** The roles in the ontology AND those we created */
 	private Map<Integer, Role> roles;
@@ -64,7 +64,6 @@ public class ReasonerData {
 	 * The default constructor.
 	 */
 	public ReasonerData() {
-		transitiveClosure = null;
 		roles = new HashMap<Integer, Role>();
 		ridges = new HashMap<Integer, RoleLabel>();
 		rays = new HashMap<Integer, Ray>();
@@ -77,6 +76,7 @@ public class ReasonerData {
 		roleAssertions = new HashMap<Integer, RoleAssertion>();
 		conceptAssertions = new HashMap<Integer, ConceptAssertion>();
 		axiomNNFs = new HashSet<Integer>();
+		setTransitiveClosureOfRoleHierarchy(new TransitiveClosureOfRoleHierarchy(roleAxioms.values(), roles.values()));
 	}
 
 	/**
@@ -107,7 +107,7 @@ public class ReasonerData {
 	 * @return true if the role has a transitive sub-role.
 	 */
 	public boolean Trans(Role role) {
-		for (RoleAxiom axiom : transitiveClosure.getTransitiveClosure())
+		for (RoleAxiom axiom : transitiveClosureOfRoleHierarchy.getClosure() )
 			if (axiom.getRightRole().equals(role))
 				if (axiom.getLeftRole().isTransitive())
 					return true;
@@ -120,9 +120,9 @@ public class ReasonerData {
 	 * @param transitiveClosure
 	 *            The transitive closure of the ontology.
 	 */
-	public void setTransitiveClosure(
-			TransitiveClosureOfRoleHierarchy transitiveClosure) {
-		this.transitiveClosure = transitiveClosure;
+	public void setTransitiveClosureOfRoleHierarchy(
+			TransitiveClosureOfRoleHierarchy transitiveClosureOfRoleHierarchy) {
+		this.transitiveClosureOfRoleHierarchy = transitiveClosureOfRoleHierarchy;
 	}
 
 	/**
@@ -131,8 +131,8 @@ public class ReasonerData {
 	 * @return the transitive closure of the ontology, or null if it has not
 	 *         been set.
 	 */
-	public TransitiveClosureOfRoleHierarchy getTransitiveClosure() {
-		return transitiveClosure;
+	public TransitiveClosureOfRoleHierarchy getTransitiveClosureOfRoleHierarchy() {
+		return transitiveClosureOfRoleHierarchy;
 	}
 
 	/**
@@ -575,8 +575,8 @@ public class ReasonerData {
 	 *         Otherwise, returns false.
 	 */
 	public boolean isSimple(Role role) {
-		for (RoleAxiom axiom : this.getTransitiveClosure()
-				.getTransitiveClosure())
+		for (RoleAxiom axiom : this.getTransitiveClosureOfRoleHierarchy()
+				.getTransitiveClosureOfRoleHierarchy())
 			if (axiom.getRightRole().equals(role))
 				if (this.Trans(axiom.getLeftRole()))
 					return false;

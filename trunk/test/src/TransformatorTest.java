@@ -182,7 +182,7 @@ public class TransformatorTest {
    roles.add(new Role("R3", 2, false, false, false, false));   roles.add(new Role("R4", 3, false, false, false, false));
    TransitiveClosureOfRoleHierarchy tr = new TransitiveClosureOfRoleHierarchy(axs, roles);
 
-   for(RoleAxiom ax : tr.getTransitiveClosure() ) {
+   for(RoleAxiom ax : tr.getTransitiveClosureOfRoleHierarchy() ) {
         System.out.println("RoleAxiom in closure: " + ax.toString() );
    }
  }

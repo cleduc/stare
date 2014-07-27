@@ -36,10 +36,10 @@ public class RoleLabel extends HashSet<Integer> {
 	//create a RoleLabel from a single role that must be identified 
 	public RoleLabel(Role r, ReasonerData data) {
 		super();
-		//if "r" is not identified, it is now
-		//data.addRole(r); 
-		this.add(r.getIdentifier());
-		//if "this" is not identified, it is now
+		this.add(r.getIdentifier()); 
+		for(Integer i : data.getTransitiveClosureOfRoleHierarchy().getSubsumers( r.getIdentifier(), data ))
+		    this.add(i);
+		//if "this" is not identified,
 		data.addRidge(this);
 	}
 	
@@ -47,6 +47,8 @@ public class RoleLabel extends HashSet<Integer> {
 	public RoleLabel(Integer id, ReasonerData data) {
 		super();
 		this.add(id);
+		for(Integer i : data.getTransitiveClosureOfRoleHierarchy().getSubsumers( id, data ))
+		    this.add(i);
 		//if "this" is not identified, it is now
 		data.addRidge(this);
 	}
@@ -59,6 +61,8 @@ public class RoleLabel extends HashSet<Integer> {
 		        rl.add(role);
                     }
 		    rl.add( r );
+		    for(Integer i : data.getTransitiveClosureOfRoleHierarchy().getSubsumers( r, data ))
+		        rl.add(i);
 		    data.addRidge(rl);
 		    return rl;
                 } else
@@ -69,8 +73,11 @@ public class RoleLabel extends HashSet<Integer> {
 		RoleLabel rl = new RoleLabel();
 		for(Integer i : lr) {
 		    rl.add(i);
+		    for(Integer j : data.getTransitiveClosureOfRoleHierarchy().getSubsumers(i , data)) 
+		       rl.add(j);
 		}
 		rl.addAll(lr);
+		
 		data.addRidge(rl);
 		return rl;
 	}
