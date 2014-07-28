@@ -42,9 +42,9 @@ public class Ray {
 	//Create a ray when we don't know ids. This costs exp
 	public Ray( RoleLabel rl, ConceptLabel cl, ConceptLabel tl, ReasonerData data) {
 		//for identifying 
-		data.addRidge(rl);
-		data.addCore(cl);
-		data.addCore(tl);
+		rl = data.addRidge(rl);
+		cl = data.addCore(cl);
+		tl = data.addCore(tl);
 		this.ridgeId = data.giveRidgeIdentifier(rl).getIdentifier();
 		this.coreId = data.giveCoreIdentifier(cl).getIdentifier();
 		this.tipId  = data.giveCoreIdentifier(tl).getIdentifier();
@@ -85,7 +85,7 @@ public class Ray {
 	       if( ! data.getRidges().containsKey(r) ) {
 		    RoleLabel rl =  data.getRidges().get(this.getRidgeId()).getNewRoleLabel(r, data);
                     Ray ray = new Ray(rl, data.getCores().get(this.getCoreId()), data.getCores().get(this.getTipId()), data);
-		    data.addRay(ray);
+		    ray = data.addRay(ray);
 		    return ray;
                 } else
 		return this;
@@ -95,7 +95,7 @@ public class Ray {
 	       RoleLabel rl = data.getRidges().get(ridgeId); 
 	       rl = rl.getNewRoleLabel(roleList, data);
 	       Ray ray = new Ray(new  Integer(rl.getIdentifier()), coreId, tipId, data );
-	       data.addRay(ray); 
+	       ray = data.addRay(ray); 
 	       return ray;
 	}
 
@@ -104,7 +104,7 @@ public class Ray {
 	       if( ! data.getCores().containsKey(c)  ) {
 		    ConceptLabel cl =  data.getCores().get(this.getCoreId()).getNewConceptLabel(c, data);
                     Ray ray = new Ray(data.getRidges().get(this.getRidgeId()), cl, data.getCores().get(this.getTipId()), data);
-		    data.addRay(ray);
+		    ray = data.addRay(ray);
 		    return ray;
                 } else
 		return this;
@@ -114,7 +114,7 @@ public class Ray {
 	       ConceptLabel cl = data.getCores().get(coreId); 
 	       cl = cl.getNewConceptLabel(conceptList, data);
 	       Ray ray = new Ray(ridgeId, new Integer(cl.getIdentifier()), tipId, data );
-	       data.addRay(ray); 
+	       ray = data.addRay(ray); 
 	       return ray;
 	}
 
@@ -123,7 +123,7 @@ public class Ray {
 	       if( ! data.getCores().containsKey(c)   ) {
 		    ConceptLabel cl =  data.getCores().get(this.getTipId()).getNewConceptLabel(c, data);
                     Ray ray = new Ray(data.getRidges().get(this.getRidgeId()), data.getCores().get(this.getCoreId()), cl, data);
-		    data.addRay(ray);
+		    ray = data.addRay(ray);
 		    return ray;
                 } else
 		return this;
@@ -133,7 +133,7 @@ public class Ray {
 	       ConceptLabel cl = data.getCores().get(this.getTipId());
 	       cl = cl.getNewConceptLabel(conceptList, data);
 	       Ray ray = new Ray(ridgeId, coreId, new Integer(cl.getIdentifier()), data );
-	       data.addRay(ray); 
+	       ray = data.addRay(ray); 
 	       return ray;
 	}
 

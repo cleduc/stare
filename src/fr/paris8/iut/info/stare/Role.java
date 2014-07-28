@@ -191,7 +191,7 @@ public class Role {
 		   rl = data.giveRoleIdentifier(rl);
 		   rl.setInverse(true);
 		}
-		data.addRole(rl);
+		rl = data.addRole(rl);
 		return rl;
 	}
 

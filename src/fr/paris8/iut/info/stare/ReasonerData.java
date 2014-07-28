@@ -210,21 +210,18 @@ public class ReasonerData {
 	 * @return The identified concept, or null if it had not been found.
 	 */
 	public Concept getConcept(Concept c) {
-		//If concept is identified
+		//If role is identified
 		if (c.getIdentifier() >= 0)
-			return concepts.get( new Integer(c.getIdentifier()) );
-
+			return concepts.get(c.getIdentifier());
 		for (Concept concept : concepts.values())
-			if (c.equals(concept))
+			if ( c.equals(concept) )
 				return concept;
 		return null;
-
 	}
 
 	public Concept giveConceptIdentifier(Concept c) {
 		Concept concept = this.getConcept(c);
-
-		if (concept == null) {
+		if (concept == null) { 
 			c.setIdentifier(concepts.size());
 			return c;
 		} else {
@@ -241,12 +238,12 @@ public class ReasonerData {
 	 * @return true if the concept has been added, false if it was already in
 	 *         the map.
 	 */
-	public boolean addConcept(Concept concept) {
-		if (concepts.containsKey( new Integer(concept.getIdentifier()) ))
-			return false;
+	public Concept addConcept(Concept concept) {
+		//if (concepts.containsKey( new Integer(concept.getIdentifier())))
+		//	return false;
 		Concept c = this.giveConceptIdentifier(concept);
 		concepts.put(new Integer(c.getIdentifier()), c);
-		return true;
+		return c;
 	}
 
 	/**
@@ -309,12 +306,12 @@ public class ReasonerData {
 		}
 	}
 	 
-	public boolean addRole(Role role) {
-		if (roles.containsKey( new Integer(role.getIdentifier())))
-			return false;
+	public Role addRole(Role role) {
+		//if (roles.containsKey( new Integer(role.getIdentifier())))
+		//	return false;
 		Role r = this.giveRoleIdentifier(role);
 		roles.put(new Integer(r.getIdentifier()), r);
-		return true;
+		return r;
 	}
 
 	/**
@@ -366,12 +363,12 @@ public class ReasonerData {
 	 * @return true if it has been added, false if its identifier was already
 	 *         registered.
 	 */
-	public boolean addCore(ConceptLabel cl) {
-		if (cores.containsKey(cl.getIdentifier()))
-			return false;
+	public ConceptLabel addCore(ConceptLabel cl) {
+		//if (cores.containsKey(cl.getIdentifier()))
+		//	return false;
 		ConceptLabel core = this.giveCoreIdentifier(cl);
 		cores.put(core.getIdentifier(), core);
-		return true;
+		return core;
 	}
 
 	/**
@@ -420,12 +417,12 @@ public class ReasonerData {
 	 * @return true if it has been added, false if its identifier was already
 	 *         registered.
 	 */
-	public boolean addRidge(RoleLabel rl) {
-		if (ridges.containsKey(rl.getIdentifier()))
-			return false;
+	public RoleLabel addRidge(RoleLabel rl) {
+		//if (ridges.containsKey(rl.getIdentifier()))
+		//	return false;
 		RoleLabel ray = this.giveRidgeIdentifier(rl);
 		ridges.put(ray.getIdentifier(), ray);
-		return true;
+		return ray;
 	}
 
 
@@ -453,12 +450,12 @@ public class ReasonerData {
 
 	 
 	 
-	public boolean addRay(Ray ray) {
-		if (rays.containsKey(ray.getIdentifier()))
-			return false;
+	public Ray addRay(Ray ray) {
+		//if (rays.containsKey(ray.getIdentifier()))
+		//	return false;
 		Ray r = this.giveRayIdentifier(ray);
 		rays.put(r.getIdentifier(), r);
-		return true;
+		return r;
 	}
 
 	public Startype getStartype(Startype st) {
@@ -487,10 +484,10 @@ public class ReasonerData {
 	}
 
 	 
-	public boolean addStartype(Startype st) {
-		if (starsByInt.containsKey(st.getIdentifier()))
-			return false;
-
+	public Startype addStartype(Startype st) {
+		//if (starsByInt.containsKey(st.getIdentifier()))
+		//	return false;
+		Startype s = this.giveStartypeIdentifier(st);
 		starsByInt.put(st.getIdentifier(), st);
 
 		for (Integer r : st.getRays().keySet() ) {    
@@ -502,7 +499,7 @@ public class ReasonerData {
 			 starsByRay.put(r, ss);
 		     }
 		}
-		return true;
+		return s;
 	}
 
 	/**
@@ -588,19 +585,19 @@ public class ReasonerData {
 	 * 
 	 * @return true if the ontology is decidable, false otherwise.
 	 */
-	public boolean isDecidable() {
-		Concept concept;
+	public boolean isDecidable(ReasonerData data) {
+		Integer concept;
 
 		for (ConceptAxiom conceptAxiom : this.getConceptAxioms().values()) {
-			concept = conceptAxiom.getNNF().containsOperator(Type.MAX);
+			concept = conceptAxiom.getNNF().containsOperator(Type.MAX, data);
 
 			if (concept == null)
-				concept = conceptAxiom.getNNF().containsOperator(Type.MIN);
+				concept = conceptAxiom.getNNF().containsOperator(Type.MIN, data);
 
 			if (concept == null)
 				continue;
 
-			if (!isSimple(concept.getRole()))
+			if (! isSimple(data.getRoles().get(data.getConcepts().get(concept).getRoleId() )) )
 				return false;
 		}
 
