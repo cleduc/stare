@@ -281,11 +281,11 @@ public class Startype implements Cloneable {
 		//update each ray since startype core is a component of each ray
 		for(Integer i : this.getRays().keySet() ) {
 		     Ray ray = data.getRays().get(i.intValue()).getNewRayByCore(i, data);
-		     data.addRay(ray);
+		     ray = data.addRay(ray);
 		     st.getRays().remove( i);
 		     st.getRays().put( ray.getIdentifier(), new Integer(0) );
 		}
-		data.addStartype(st);
+		st = data.addStartype(st);
 		return st;
 	}
 
@@ -298,11 +298,11 @@ public class Startype implements Cloneable {
 		//update each ray since startype core is a component of each ray
 		for(Integer i : this.getRays().keySet() ) {
 		     Ray ray = data.getRays().get(i).getNewRayByCore(i, data);
-		     data.addRay(ray);
+		     ray = data.addRay(ray);
 		     st.getRays().remove( i );
 		     st.getRays().put( ray.getIdentifier(), new Integer(0) );
 		}
-		data.addStartype(st);
+		st = data.addStartype(st);
 		return st;
 	}
 	
@@ -349,11 +349,22 @@ public class Startype implements Cloneable {
 	 * @param concept
 	 *            Concept to apply the rule.
 	 */
-	/*
-	public List<Concept> intersectionRule(Concept concept) {
-		ArrayList<Concept> concepts = new ArrayList<Concept>();
 
-		for (Concept child : concept.getChildren()) {
+	//This method allows to expand the startype progressively 
+	public Startype intersectionRule(Integer concept, ReasonerData data) throws CloneNotSupportedException {
+		Startype st = null; 
+		for (Integer child : data.getConcepts().get(concept).getChildren() ) {
+			st = updateCore(child, data);
+		}
+		return st;
+	}
+	
+	//This method allows to expand the startype progressively
+	/*
+	public Startype intersectionRule(Integer concept) {
+		List<Integer> concepts = new ArrayList<Concept>();
+
+		for (Integer child : concept.getChildren()) {
 			core.add(child);
 			concepts.add(child);
 		}

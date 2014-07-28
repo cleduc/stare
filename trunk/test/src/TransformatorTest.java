@@ -63,74 +63,75 @@ public class TransformatorTest {
    String line  = "A";
    System.out.println("Tested Concept : " + line); 
    Concept c1 = StringToConcept.stringToConcept( line, data );
-   System.out.println("Obtained Concept : " + c1.toString() );
+
+   System.out.println("Obtained Concept : " + c1.toString(data) );
    
    line  = "(A AND B)";
    System.out.println("Tested Concept : " + line); 
    c1 = StringToConcept.stringToConcept( line , data );
-   System.out.println("Obtained Concept : " + c1.toString() +", id="+c1.getIdentifier() );
+   System.out.println("Obtained Concept : " + c1.toString(data) +", id="+c1.getIdentifier() );
    
    String line2  = "(B AND A)";
    System.out.println("Tested Concept : " + line2); 
    Concept c2 = StringToConcept.stringToConcept( line2 , data);
-   System.out.println("Obtained Concept : " + c1.toString() +", id="+c2.getIdentifier() );
+   System.out.println("Obtained Concept : " + c1.toString(data) +", id="+c2.getIdentifier() );
 
    if( c1.equals(c2) )
-       System.out.println("Result  :" + c1.toString() + "=" + c2.toString());
+       System.out.println("Result  :" + c1.toString(data) + "=" + c2.toString());
    else 
-       System.out.println("Result : " + c1.toString() + "<>" + c2.toString());
+       System.out.println("Result : " + c1.toString(data) + "<>" + c2.toString());
 
    line  = "(A OR B)";
    System.out.println("Tested Concept : " + line); 
    c1 = StringToConcept.stringToConcept( line , data );
-   System.out.println("Obtained Concept : " + c1.toString() );
+   System.out.println("Obtained Concept : " + c1.toString(data) );
 
    line  = "(NOT B)";
    System.out.println("Tested Concept : " + line); 
    c1 = StringToConcept.stringToConcept( line , data );
-   System.out.println("Obtained Concept : " + c1.toString() );
+   System.out.println("Obtained Concept : " + c1.toString(data) );
 
    line  = "(A AND ((NOT B) OR B))";
    System.out.println("Tested Concept : " + line); 
    c1 = StringToConcept.stringToConcept( line , data);
-   System.out.println("Obtained Concept : " + c1.toString() +", id="+c1.getIdentifier());
+   System.out.println("Obtained Concept : " + c1.toString(data) +", id="+c1.getIdentifier());
 
    line2  = "((B OR (NOT B)) AND A)";
    System.out.println("Tested Concept : " + line); 
    c2 = StringToConcept.stringToConcept( line2 , data);
-   System.out.println("Obtained Concept : " + c2.toString() +", id="+c2.getIdentifier());
+   System.out.println("Obtained Concept : " + c2.toString(data) +", id="+c2.getIdentifier());
 
 
    line  = "(MIN 2 R (A AND ((NOT B) OR B)))";
    System.out.println("Tested Concept : " + line); 
    c1 = StringToConcept.stringToConcept( line , data );
-   System.out.println("Obtained Concept : " + c1.toString() +", id="+c1.getIdentifier() );
+   System.out.println("Obtained Concept : " + c1.toString(data) +", id="+c1.getIdentifier() );
 
    line2  = "(MIN 2 R (((NOT B) OR B) AND A))";
 
    System.out.println("Tested Concept : " + line2); 
    c2 = StringToConcept.stringToConcept( line2 , data );
-   System.out.println("Obtained Concept : " + c2.toString() +", id="+c2.getIdentifier() );
+   System.out.println("Obtained Concept : " + c2.toString(data) +", id="+c2.getIdentifier() );
 
    if( c1.equals(c2) )
-       System.out.println("Result :" + c1.toString() + "=" + c2.toString());
+       System.out.println("Result :" + c1.toString(data) + "=" + c2.toString());
    else 
-       System.out.println("Result : " + c1.toString() + "<>" + c2.toString());
+       System.out.println("Result : " + c1.toString(data) + "<>" + c2.toString());
 
    line  = "(SOME R (((NOT B) OR B) AND (MIN 2 R (((NOT B) OR B) AND A))))";
    System.out.println("Tested Concept : " + line); 
    c1 = StringToConcept.stringToConcept( line , data);
-   System.out.println("Obtained Concept : " + c1.toString() +", id="+c1.getIdentifier());
+   System.out.println("Obtained Concept : " + c1.toString(data) +", id="+c1.getIdentifier());
 
    line2  = "(SOME R ((MIN 2 R (A AND ((NOT B) OR B))) AND ((NOT B) OR B)))";
    System.out.println("Tested Concept : " + line2); 
    c2 = StringToConcept.stringToConcept( line2 , data);
-   System.out.println("Obtained Concept : " + c2.toString() +", id="+c2.getIdentifier() );
+   System.out.println("Obtained Concept : " + c2.toString(data) +", id="+c2.getIdentifier() );
 
    if( c1.equals(c2) )
-       System.out.println("Result :" + c1.toString() + "=" + c2.toString());
+       System.out.println("Result :" + c1.toString(data) + "=" + c2.toString(data));
    else 
-       System.out.println("Result : " + c1.toString() + "<>" + c2.toString());
+       System.out.println("Result : " + c1.toString(data) + "<>" + c2.toString(data));
  
    OWLOntologyManager manager = OWLManager.createOWLOntologyManager( );
    OWLDataFactory owlfactory = manager.getOWLDataFactory();

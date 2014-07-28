@@ -171,77 +171,73 @@ public class StringToConcept {
 		Concept concept;
 
 		if (!isOperator(top)) {
-			concept = data.giveConceptIdentifier(new Concept(top, -2, false,
-					false));
-
-			data.addConcept(concept);
+			concept = new Concept(top, -2, false, false);
+			concept = data.addConcept(concept);
 			return concept;
 		} else {
 			if (top.equals("NOT")) {
-				return new Concept(Type.COMPLEMENT, makeConcept(data));
+				concept = new Concept(Type.COMPLEMENT, makeConcept(data).getIdentifier() );
+				concept = data.addConcept(concept);
+				return concept ;
 			} else if (top.equals("SOME")) {
-				role = data.giveRoleIdentifier(new Role(stack.pop(), -2, false,
-						false, false, false));
-				concept = data.giveConceptIdentifier(new Concept(Type.SOME,
-						role, makeConcept(data)));
-
-				data.addRole(role);
-				data.addConcept(concept);
+				role = new Role(stack.pop(), -2, false,false, false, false);
+				role = data.addRole(role);
+				concept = new Concept( role.getIdentifier(), Type.SOME, makeConcept(data).getIdentifier());
+				concept = data.addConcept(concept);
 
 				return concept;
 			} else if (top.equals("ALL")) {
-				role = data.giveRoleIdentifier(new Role(stack.pop(), -2, false,
-						false, false, false));
-				concept = data.giveConceptIdentifier(new Concept(Type.ALL,
-						role, makeConcept(data)));
-
-				data.addRole(role);
-				data.addConcept(concept);
+				role = new Role(stack.pop(), -2, false,false, false, false);
+				role = data.addRole(role);
+				concept = new Concept(role.getIdentifier(), Type.ALL, makeConcept(data).getIdentifier());
+				concept = data.addConcept(concept);
 
 				return concept;
 			} else if (top.equals("MAX")) {
 				int cardinality = Integer.parseInt(stack.pop());
-				role = data.giveRoleIdentifier(new Role(stack.pop(), -2, false,
-						false, false, false));
-				concept = data.giveConceptIdentifier(new Concept(Type.MAX,
-						cardinality, role, makeConcept(data)));
+				role =  new Role(stack.pop(), -2, false,
+						false, false, false);
+				role = data.addRole(role);
+				concept =  new Concept(cardinality, role.getIdentifier(), Type.MAX, makeConcept(data).getIdentifier());
 
-				data.addRole(role);
-				data.addConcept(concept);
+				
+				concept = data.addConcept(concept);
 
 				return concept;
 			} else if (top.equals("MIN")) {
 				int cardinality = Integer.parseInt(stack.pop());
-				role = data.giveRoleIdentifier(new Role(stack.pop(), -2, false,
-						false, false, false));
-				concept = data.giveConceptIdentifier(new Concept(Type.MIN,
-						cardinality, role, makeConcept(data)));
+				role = new Role(stack.pop(), -2, false,
+						false, false, false);
+				role = data.addRole(role);
+				concept = new Concept(cardinality, role.getIdentifier(), Type.MIN, makeConcept(data).getIdentifier());
 
-				data.addRole(role);
-				data.addConcept(concept);
+				concept = data.addConcept(concept);
 
 				return concept;
 			} else if (top.equals("OR")) {
 				Concept left, right;
 
 				left = makeConcept(data);
+				left = data.addConcept(left);
 				right = makeConcept(data);
-				concept = data.giveConceptIdentifier(new Concept(Type.UNION,
-						left, right));
+				right = data.addConcept(right);
+				concept = new Concept(Type.UNION,
+						left.getIdentifier(), right.getIdentifier());
 
-				data.addConcept(concept);
+				concept = data.addConcept(concept);
 
 				return concept;
 			} else if (top.equals("AND")) {
 				Concept left, right;
 
 				left = makeConcept(data);
+				left = data.addConcept(left);
+				    
 				right = makeConcept(data);
-				concept = data.giveConceptIdentifier(new Concept(
-						Type.INTERSECTION, left, right));
-
-				data.addConcept(concept);
-
+				right = data.addConcept(right);
+				 
+				concept = new Concept(Type.INTERSECTION, left.getIdentifier(), right.getIdentifier());
+				concept = data.addConcept(concept);
 				return concept;
 			} else {
 				return null;

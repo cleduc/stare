@@ -163,7 +163,7 @@ public class Frame {
 	
 	public Startype init(ReasonerData data) throws CloneNotSupportedException {
 		Startype st = new Startype( data.getNNFConceptLabel() );
-		data.addStartype(st);
+		st = data.addStartype(st);
 		return st;
 	}
 	

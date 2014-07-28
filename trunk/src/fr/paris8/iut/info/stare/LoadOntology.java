@@ -128,7 +128,7 @@ public class LoadOntology {
 		for(ConceptAxiom i : reasonerData.getConceptAxioms().values() ) {
 		    //each NNF is identified. This may be already done
 		    Concept c = i.getNNF();
-		    reasonerData.addConcept( c );
+		    c = reasonerData.addConcept( c );
 		    reasonerData.getAxiomNNFs().add( new Integer(c.getIdentifier()) );	
 		    allNNF.add( new Integer(c.getIdentifier()) ); 
 		}
@@ -140,38 +140,38 @@ public class LoadOntology {
 
 	//compute all subconcepts of "concept"
 	//
-	public Set<Concept> subconcepts(Concept concept){
-	       Set<Concept> closure = new HashSet<Concept>();
+	public Set<Integer> subconcepts(Integer concept, ReasonerData data){
+	       Set<Integer> closure = new HashSet<Integer>();
 
-	       if ( concept.isTerminal() ) {
+	       if ( data.getConcepts().get(concept).isTerminal() ) {
 		    closure.add(concept);
 		    return closure;
 	       } else {
 			closure.add( concept );
-			switch (concept.getOperator()) {
+			switch (data.getConcepts().get(concept).getOperator()) {
 			case INTERSECTION:
-				for (Concept child : concept.getChildren()) { 
-			             closure.addAll( subconcepts (child) );
+				for (Integer child : data.getConcepts().get(concept).getChildren()) { 
+			             closure.addAll( subconcepts (child, data) );
 				}
 				return closure;  
 			case UNION:
-				closure.addAll( subconcepts (concept.getChildren().get(0)) );
-				closure.addAll( subconcepts (concept.getChildren().get(1)) );
+				closure.addAll( subconcepts (data.getConcepts().get(concept).getChildren().get(0), data) );
+				closure.addAll( subconcepts (data.getConcepts().get(concept).getChildren().get(1), data) );
 				return closure; 
 			case SOME:
-				closure.addAll( subconcepts ( concept.getChildren().get(0)) );
+				closure.addAll( subconcepts (data.getConcepts().get(concept).getChildren().get(0), data));
 				return closure; 
 			case ALL:
-				closure.addAll( subconcepts ( concept.getChildren().get(0) ) );
+				closure.addAll( subconcepts ( data.getConcepts().get(concept).getChildren().get(0), data));
 				return closure; 
 			case MIN:
-				closure.addAll( subconcepts ( concept.getChildren().get(0) ) );
+				closure.addAll( subconcepts ( data.getConcepts().get(concept).getChildren().get(0), data) );
 				return closure;
 			case MAX:
-				closure.addAll( subconcepts ( concept.getChildren().get(0) ) ) ;
+				closure.addAll( subconcepts ( data.getConcepts().get(concept).getChildren().get(0), data) ) ;
 				return closure;
 			case COMPLEMENT:
-				closure.addAll( subconcepts ( concept.getChildren().get(0) ) );
+				closure.addAll( subconcepts ( data.getConcepts().get(concept).getChildren().get(0), data) );
 				return closure;
 			default:
 				break;
@@ -317,19 +317,17 @@ public class LoadOntology {
 	private void makeConceptsFromPropertyDomains() {
 		Concept left, right, nnf;
 		Concept top = new Concept("Thing", 0, false, false);
-
+		top = reasonerData.addConcept(top);
 		/* OBJECT */
 		for (OWLObjectProperty property : ontology
 				.getObjectPropertiesInSignature()) {
 			for (OWLObjectPropertyDomainAxiom axiom : ontology
 					.getObjectPropertyDomainAxioms(property)) {
-				left = reasonerData
-						.giveConceptIdentifier(new Concept(Type.SOME,
-								ontologyRoles.get(axiom.getProperty()), top));
+				left =  new Concept(ontologyRoles.get(axiom.getProperty()).getIdentifier(), Type.SOME, top.getIdentifier());
+				left = reasonerData.addConcept(left);
 				right = getConceptFromClassRecursive(axiom.getDomain().getNNF());
-				nnf = reasonerData.giveConceptIdentifier(new Concept(
-						Type.UNION, Concept.negate(left, reasonerData), right));
-				reasonerData.addConcept(left);
+				nnf = new Concept(Type.UNION, Concept.negate(left.getIdentifier(), reasonerData), right.getIdentifier());
+				nnf = reasonerData.addConcept(nnf);
 				reasonerData.addConceptAxiom(new ConceptAxiom(increment, left,
 						right, nnf));
 				increment++;
@@ -339,12 +337,12 @@ public class LoadOntology {
 		for (OWLDataProperty property : ontology.getDataPropertiesInSignature()) {
 			for (OWLDataPropertyDomainAxiom axiom : ontology
 					.getDataPropertyDomainAxioms(property)) {
-				left = reasonerData
-						.giveConceptIdentifier(new Concept(Type.SOME,
-								ontologyRoles.get(axiom.getProperty()), top));
+				left = new Concept(ontologyRoles.get(axiom.getProperty()).getIdentifier(), Type.SOME, top.getIdentifier());
+				left = reasonerData.addConcept(left);
 				right = getConceptFromClassRecursive(axiom.getDomain().getNNF());
-				nnf = reasonerData.giveConceptIdentifier(new Concept(
-						Type.UNION, Concept.negate(left, reasonerData), right));
+				nnf = new Concept(
+						Type.UNION, Concept.negate(left.getIdentifier(), reasonerData), right.getIdentifier());
+				nnf = reasonerData.addConcept(nnf);
 				reasonerData.addConceptAxiom(new ConceptAxiom(increment, left,
 						right, nnf));
 				increment++;
@@ -368,19 +366,20 @@ public class LoadOntology {
 	 */
 	private void makeConceptsFromPropertyRanges() {
 		Concept left, right, nnf;
-
+		Concept top = new Concept("Thing", 0, false, false);
+		reasonerData.addConcept(top);
 		/* OBJECT */
 		for (OWLObjectProperty property : ontology
 				.getObjectPropertiesInSignature()) {
 			for (OWLObjectPropertyRangeAxiom axiom : ontology
 					.getObjectPropertyRangeAxioms(property)) {
-				left = reasonerData.giveConceptIdentifier(new Concept(
-						Type.SOME, reasonerData.getInverseOfRole(ontologyRoles.get(axiom.getProperty()), reasonerData), 
-  						           new Concept("Thing", 0, false, false)));
+				Role role = reasonerData.getInverseOfRole(ontologyRoles.get(axiom.getProperty()), reasonerData);
+				left = new Concept(role.getIdentifier(), Type.SOME , 
+  						           top.getIdentifier());
+				left = reasonerData.addConcept(left);
 				right = getConceptFromClassRecursive(axiom.getRange().getNNF());
-				nnf = reasonerData.giveConceptIdentifier(new Concept(
-						Type.UNION, Concept.negate(left, reasonerData), right));
-				reasonerData.addConcept(left);
+				nnf = new Concept(Concept.negate(left.getIdentifier(), reasonerData), Type.UNION, right.getIdentifier());
+				nnf = reasonerData.addConcept(nnf);
 				reasonerData.addConceptAxiom(new ConceptAxiom(increment, left,
 						right, nnf));
 				increment++;
@@ -398,14 +397,13 @@ public class LoadOntology {
 				.getObjectPropertiesInSignature())
 			if (property.isFunctional(ontology)) {
 				Concept top = new Concept("Thing", 0, false, false);
-				left = reasonerData.giveConceptIdentifier(new Concept(
-						Type.SOME, ontologyRoles.get(property), top));
-				right = reasonerData.giveConceptIdentifier(new Concept(
-						Type.MAX, 1, ontologyRoles.get(property), top));
-				nnf = reasonerData.giveConceptIdentifier(new Concept(
-						Type.UNION, Concept.negate(left, reasonerData), right));
-				reasonerData.addConcept(left);
-				reasonerData.addConcept(right);
+				left =  new Concept(ontologyRoles.get(property).getIdentifier(),Type.SOME, top.getIdentifier());
+				right = new Concept(1, ontologyRoles.get(property).getIdentifier(), Type.MAX, top.getIdentifier());
+				nnf =  new Concept(Concept.negate(left.getIdentifier(), reasonerData),
+						Type.UNION, right.getIdentifier());
+				left = reasonerData.addConcept(left);
+				right = reasonerData.addConcept(right);
+				nnf = reasonerData.addConcept(nnf);
 				reasonerData.addConceptAxiom(new ConceptAxiom(increment, left,
 						right, nnf));
 				increment++;
@@ -517,8 +515,8 @@ public class LoadOntology {
 				n2 = classAssertionAxiom.getIndividual().toStringID();
 				c2 = reasonerData.giveConceptIdentifier(new Concept(n2
 						.substring(n2.indexOf("#") + 1), -1, false, true));
-				reasonerData.addConcept(c1);
-				reasonerData.addConcept(c2);
+				c1 = reasonerData.addConcept(c1);
+				c2 = reasonerData.addConcept(c2);
 				reasonerData.addConceptAssertion(new ConceptAssertion(
 						increment, c1, c2));
 				increment++;
@@ -544,8 +542,8 @@ public class LoadOntology {
 				n2 = propertyAssertionAxiom.getObject().toStringID();
 				c2 = reasonerData.giveConceptIdentifier(new Concept(n2
 						.substring(n2.indexOf("#") + 1), -1, false, true));
-				reasonerData.addConcept(c1);
-				reasonerData.addConcept(c2);
+				c1 = reasonerData.addConcept(c1);
+				c2 = reasonerData.addConcept(c2);
 				reasonerData.addRoleAssertion(new RoleAssertion(increment, r,
 						c1, c2));
 				increment++;
@@ -561,9 +559,8 @@ public class LoadOntology {
 		for (OWLNamedIndividual individual : ontology
 				.getIndividualsInSignature()) {
 			name = individual.toStringID();
-			reasonerData.addConcept(reasonerData
-					.giveConceptIdentifier(new Concept(name.substring(name
-							.indexOf("#") + 1), -2, false, true)));
+			Concept c = new Concept(name.substring(name.indexOf("#") + 1), -2, false, true);
+			c = reasonerData.addConcept(c);
 		}
 	}
 
@@ -629,43 +626,45 @@ public class LoadOntology {
 			/* ALL operator */
 			case DATA_ALL_VALUES_FROM:
 				role = ontologyRoles.get(((OWLDataAllValuesFrom) expression)
-						.getProperty());
+						.getProperty());				
 				concept = getConceptFromDataRange(((OWLDataAllValuesFrom) expression)
 						.getFiller());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.ALL, role, concept));
-				reasonerData.addConcept(concept);
+
+				concept = new Concept( role.getIdentifier(), Type.ALL, concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 			case OBJECT_ALL_VALUES_FROM:
 				role = ontologyRoles.get(((OWLObjectAllValuesFrom) expression)
 						.getProperty());
 				concept = getConceptFromClassRecursive(((OWLObjectAllValuesFrom) expression)
 						.getFiller());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.ALL, role, concept));
-				reasonerData.addConcept(concept);
+				
+				concept = new Concept(role.getIdentifier(), Type.ALL, concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 				/* COMPLEMENT operator */
 			case OBJECT_COMPLEMENT_OF:
 				concept = getConceptFromClassRecursive(((OWLObjectComplementOf) expression)
 						.getOperand());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.COMPLEMENT, concept));
-				reasonerData.addConcept(concept);
+				concept = new Concept(Type.COMPLEMENT, concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 				/* INTERSECTION operator */
 			case OBJECT_INTERSECTION_OF:
 				formulas = new Concept[((OWLObjectIntersectionOf) expression)
 						.getOperands().size()];
 				i = 0;
+				Integer[] ids = new Integer[((OWLObjectIntersectionOf) expression)
+						.getOperands().size()];
 				for (OWLClassExpression operand : ((OWLObjectIntersectionOf) expression)
 						.getOperands()) {
 					formulas[i] = getConceptFromClassRecursive(operand);
-					i++;
+					ids[i] = formulas[i].getIdentifier();
+					i++;					
 				}
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.INTERSECTION, formulas));
-				reasonerData.addConcept(concept);
+				
+				concept = new Concept(Type.INTERSECTION, ids);
+				concept = reasonerData.addConcept(concept);
 				return concept;
 				/* MAX operator */
 			case DATA_MAX_CARDINALITY:
@@ -673,20 +672,16 @@ public class LoadOntology {
 						.getProperty());
 				concept = getConceptFromDataRange(((OWLDataMaxCardinality) expression)
 						.getFiller());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.MAX, ((OWLDataMaxCardinality) expression)
-								.getCardinality(), role, concept));
-				reasonerData.addConcept(concept);
+				concept = new Concept( ((OWLDataMaxCardinality) expression).getCardinality(), role.getIdentifier(), Type.MAX,  concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 			case OBJECT_MAX_CARDINALITY:
 				role = ontologyRoles.get(((OWLObjectMaxCardinality) expression)
 						.getProperty());
 				concept = getConceptFromClassRecursive(((OWLObjectMaxCardinality) expression)
 						.getFiller());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.MAX, ((OWLObjectMaxCardinality) expression)
-								.getCardinality(), role, concept));
-				reasonerData.addConcept(concept);
+				concept = new Concept( ((OWLObjectMaxCardinality) expression).getCardinality(), role.getIdentifier(),Type.MAX, concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 				/* MIN operator */
 			case DATA_MIN_CARDINALITY:
@@ -694,20 +689,16 @@ public class LoadOntology {
 						.getProperty());
 				concept = getConceptFromDataRange(((OWLDataMinCardinality) expression)
 						.getFiller());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.MIN, ((OWLDataMinCardinality) expression)
-								.getCardinality(), role, concept));
-				reasonerData.addConcept(concept);
+				concept = new Concept( ((OWLDataMinCardinality) expression).getCardinality(), role.getIdentifier(), Type.MIN, concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 			case OBJECT_MIN_CARDINALITY:
 				role = ontologyRoles.get(((OWLObjectMinCardinality) expression)
 						.getProperty());
 				concept = getConceptFromClassRecursive(((OWLObjectMinCardinality) expression)
 						.getFiller());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.MIN, ((OWLObjectMinCardinality) expression)
-								.getCardinality(), role, concept));
-				reasonerData.addConcept(concept);
+				concept = new Concept( ((OWLObjectMinCardinality) expression).getCardinality(), role.getIdentifier(), Type.MIN, concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 				/* SOME operator */
 			case DATA_SOME_VALUES_FROM:
@@ -715,32 +706,33 @@ public class LoadOntology {
 						.getProperty());
 				concept = getConceptFromDataRange(((OWLDataSomeValuesFrom) expression)
 						.getFiller());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.SOME, role, concept));
-				reasonerData.addConcept(concept);
+				concept = new Concept(role.getIdentifier(), Type.SOME, concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 			case OBJECT_SOME_VALUES_FROM:
 				role = ontologyRoles.get(((OWLObjectSomeValuesFrom) expression)
 						.getProperty());
 				concept = getConceptFromClassRecursive(((OWLObjectSomeValuesFrom) expression)
 						.getFiller());
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.SOME, role, concept));
-				reasonerData.addConcept(concept);
+				concept = new Concept(role.getIdentifier(), Type.SOME, concept.getIdentifier());
+				concept = reasonerData.addConcept(concept);
 				return concept;
 				/* UNION operator */
 			case OBJECT_UNION_OF:
 				formulas = new Concept[((OWLObjectUnionOf) expression)
 						.getOperands().size()];
 				i = 0;
+				Integer[] ids2 = new Integer[((OWLObjectUnionOf) expression)
+						.getOperands().size()];
 				for (OWLClassExpression operand : ((OWLObjectUnionOf) expression)
 						.getOperands()) {
 					formulas[i] = getConceptFromClassRecursive(operand);
+					ids2[i] = formulas[i].getIdentifier();
 					i++;
 				}
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						Type.UNION, formulas));
-				reasonerData.addConcept(concept);
+				 
+				concept = new Concept(Type.UNION, ids2);
+				concept = reasonerData.addConcept(concept);
 				return concept;
 				/* treated for the default example */
 			case DATA_HAS_VALUE:
@@ -754,22 +746,21 @@ public class LoadOntology {
 				formulas = new Concept[((OWLObjectOneOf) expression)
 						.getIndividuals().size()];
 				i = 0;
-
+				Integer[] ids3 = new Integer[((OWLObjectOneOf) expression)
+						.getIndividuals().size()];
 				for (OWLIndividual individual : ((OWLObjectOneOf) expression)
 						.getIndividuals()) {
 					name = individual.asOWLNamedIndividual().getIRI()
 							.toString();
-					concept = reasonerData.giveConceptIdentifier(new Concept(
-							name.substring(name.indexOf("#") + 1), -2, false,
-							true));
-					reasonerData.addConcept(concept);
+					concept = new Concept(name.substring(name.indexOf("#") + 1), -2, false,true);
+					concept = reasonerData.addConcept(concept);
 					formulas[i] = concept;
+					ids3[i] = concept.getIdentifier();
 					i++;
 				}
 
-				concept = reasonerData.giveConceptIdentifier(new Concept(
-						formulas));
-				reasonerData.addConcept(concept);
+				concept = new Concept(ids3);
+				concept = reasonerData.addConcept(concept);
 				return concept;
 				/* all other operators are not treated */
 			default:
