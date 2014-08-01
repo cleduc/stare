@@ -41,14 +41,9 @@ public class Ray {
 
 	//Create a ray when we don't know ids. This costs exp
 	public Ray( RoleLabel rl, ConceptLabel cl, ConceptLabel tl, ReasonerData data) {
-		//for identifying 
-		rl = data.addRidge(rl);
-		cl = data.addCore(cl);
-		tl = data.addCore(tl);
-		this.ridgeId = data.giveRidgeIdentifier(rl).getIdentifier();
-		this.coreId = data.giveCoreIdentifier(cl).getIdentifier();
-		this.tipId  = data.giveCoreIdentifier(tl).getIdentifier();
-		data.addRay(this);
+		this.ridgeId = new Integer(rl.getIdentifier());
+		this.coreId = new Integer(cl.getIdentifier());
+		this.tipId  = new Integer(tl.getIdentifier());
 	}
 
 	//Create a ray when we have only a simple role for ridge and a simple concept for tip 
@@ -57,19 +52,16 @@ public class Ray {
 		rl = rl.getNewRoleLabel(srl.getIdentifier(), data);
 		ConceptLabel conceptl = new ConceptLabel();
 		conceptl = conceptl.getNewConceptLabel(tl.getIdentifier(), data);
-		//data.addCore(cl);
-		this.ridgeId = data.giveRidgeIdentifier(rl).getIdentifier();
-		this.coreId = data.giveCoreIdentifier(cl).getIdentifier();
-		this.tipId  = data.giveCoreIdentifier(conceptl).getIdentifier();
-		data.addRay(this);
+		this.ridgeId = new Integer(rl.getIdentifier());
+		this.coreId = new Integer(cl.getIdentifier());
+		this.tipId  = new Integer(conceptl.getIdentifier());
 	}
 
 	//Create a ray when we know ids
 	public Ray( Integer rl, Integer cl, Integer tl, ReasonerData data) {
-		this.ridgeId = rl;
-		this.coreId = cl;
-		this.tipId = tl;
-		data.addRay(this);
+		this.ridgeId = new Integer(rl);
+		this.coreId = new Integer(cl);
+		this.tipId = new Integer(tl);
 	}
 	/*
 	public boolean matches(Role role, Concept c, Concept cr) {
@@ -137,12 +129,18 @@ public class Ray {
 	       return ray;
 	}
 
+	public boolean tipContains(Integer concept, ReasonerData data){
+		if (data.getCores().get(tipId).contains(concept))
+		   return true;
+		else return false;
+	}
+
 	public void addNNFToTip(ReasonerData data) {
-		data.getCores().get(this.getTipId().intValue()).addAll(data.getAxiomNNFs());      
+		data.getCores().get(this.getTipId().intValue()).getConceptIds().addAll(data.getAxiomNNFs());      
 	}
 
 	public void addNNFToCore(ReasonerData data) {
-		data.getCores().get(this.getCoreId().intValue()).addAll(data.getAxiomNNFs());  
+		data.getCores().get(this.getCoreId().intValue()).getConceptIds().addAll(data.getAxiomNNFs());  
 	}
 
 	public Integer getRidgeId() {
@@ -179,13 +177,13 @@ public class Ray {
 
 	public Ray fusion(Integer ray2, ReasonerData data) {
 		Ray rl= null;
-		for(Integer i : data.getRidges().get(ray2) ){
+		for(Integer i : data.getRidges().get(ray2).getRoleIds() ){
 		    rl = getNewRayByRole(i, data);
 		}
-		for(Integer i : data.getCores().get(ray2) ){
+		for(Integer i : data.getCores().get(ray2).getConceptIds() ){
 		    rl = getNewRayByCore(i, data);
 		}
-		for(Integer i : data.getCores().get(ray2) ){
+		for(Integer i : data.getCores().get(ray2).getConceptIds() ){
 		    rl = getNewRayByTip(i, data);
 		}
 		return rl;
@@ -212,24 +210,24 @@ public class Ray {
 			return true;
 		if (obj == null )
 			return false;
-
 		if (getClass() != obj.getClass())
 			return false;
-
 		Ray other = (Ray) obj;
-
-		//if (this.size() != other.size())
-		//	return false;
-
-		if ( ! this.ridgeId.equals(other.getRidgeId()) )
-			return false;
-
+		if (this.getIdentifier() >= 0 && other.getIdentifier() >= 0) {
+			if (this.getIdentifier() == other.getIdentifier() )
+			   return true;
+			else 
+			   return false;
+		}
 		if ( ! this.coreId.equals(other.getCoreId()) )
 			return false;
-
-		if ( ! this.tipId.equals(other.getTipId()) )
+		//System.out.println("ridge other ="+other.getRidgeId());
+		//System.out.println("ridge this ="+this.getRidgeId());
+		//System.out.println("ridge= "+data.getRidges().get(this.ridgeId));
+		if ( ! this.ridgeId.equals(other.getRidgeId()) )
 			return false;
-
+		if ( ! this.tipId.equals(other.getTipId() ) )
+			return false;
 		return true;
 	}
 
@@ -239,12 +237,12 @@ public class Ray {
 
 		sb.append("Ray " + id + System.getProperty("line.separator"));
 		sb.append("Core " +  System.getProperty("line.separator"));
-		sb.append( data.getCores().get( coreId.intValue() ).toString(data) );
+		sb.append( data.getCores().get( coreId).toString(data) );
 		sb.append("Ridge:" + System.getProperty("line.separator"));
-		sb.append( data.getRidges().get( ridgeId.intValue() ).toString(data) );
+		sb.append( data.getRidges().get( ridgeId ).toString(data) );
 		sb.append(System.getProperty("line.separator"));
 		sb.append("Tip:" + System.getProperty("line.separator"));
-		sb.append(data.getCores().get( tipId.intValue() ).toString(data));
+		sb.append("Id= "+tipId +", "+ data.getCores().get( tipId ).toString(data));
 
 		return sb.toString();
 	}

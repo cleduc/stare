@@ -26,44 +26,48 @@ import java.util.List;
 import java.util.Set;
 
 //a set of roles
-public class RoleLabel extends HashSet<Integer> {
+public class RoleLabel {
 	private static final long serialVersionUID = 1L;
 	private int identifier = -1;
+	private Set<Integer> roleIds;
 
 	public RoleLabel() {
-		super();
+		roleIds = new HashSet<Integer>();
 	}
 	//create a RoleLabel from a single role that must be identified 
 	public RoleLabel(Role r, ReasonerData data) {
-		super();
-		this.add(r.getIdentifier()); 
-		for(Integer i : data.getTransitiveClosureOfRoleHierarchy().getSubsumers( r.getIdentifier(), data ))
-		    this.add(i);
-		//if "this" is not identified,
-		data.addRidge(this);
+		roleIds = new HashSet<Integer>();
+		roleIds.add(r.getIdentifier());
+		for(Integer i : data.getSubsumers( r.getIdentifier() ))
+		    roleIds.add(i);
 	}
 	
 	//If concept is already identifed
 	public RoleLabel(Integer id, ReasonerData data) {
-		super();
-		this.add(id);
-		for(Integer i : data.getTransitiveClosureOfRoleHierarchy().getSubsumers( id, data ))
-		    this.add(i);
-		//if "this" is not identified, it is now
-		data.addRidge(this);
+		roleIds = new HashSet<Integer>();
+		roleIds.add(id);
+		for(Integer i : data.getSubsumers( id ))
+		    roleIds.add(i);
+	}
+
+	public void add(Role r) {
+		roleIds.add(r.getIdentifier());
+	}
+	public void add(Integer id) {
+		roleIds.add(id);
 	}
 
 	//If "r" is not in "this", a new RoleLabel is created 
 	public  RoleLabel getNewRoleLabel(Integer r, ReasonerData data) {
-		if( ! this.contains(r) ) {
+		if( ! contains(r) ) {
 		    RoleLabel rl = new RoleLabel();
-		    for(Integer role : this){ 
+		    for(Integer role : roleIds){ 
 		        rl.add(role);
                     }
 		    rl.add( r );
-		    for(Integer i : data.getTransitiveClosureOfRoleHierarchy().getSubsumers( r, data ))
+		    for(Integer i : data.getSubsumers( r ))
 		        rl.add(i);
-		    data.addRidge(rl);
+		    rl = data.addRidge(rl);
 		    return rl;
                 } else
 		return this;
@@ -73,40 +77,26 @@ public class RoleLabel extends HashSet<Integer> {
 		RoleLabel rl = new RoleLabel();
 		for(Integer i : lr) {
 		    rl.add(i);
-		    for(Integer j : data.getTransitiveClosureOfRoleHierarchy().getSubsumers(i , data)) 
+		    for(Integer j : data.getSubsumers(i)) 
 		       rl.add(j);
 		}
-		rl.addAll(lr);
+		rl.getRoleIds().addAll(lr);
 		
 		data.addRidge(rl);
 		return rl;
 	}
 
 	public  boolean contains(Role role) {
-		return this.contains(role.getIdentifier());
+		return roleIds.contains(role.getIdentifier());
 	}
 
 	public  boolean contains(Integer role) {
-		return this.contains(role);
+		return roleIds.contains(role);
 	}
 
 	public boolean isInverseOf(RoleLabel roleLabel, ReasonerData data) {
-		boolean inverseFound = false;
-		for (Integer role : this) {
-			for (Integer r : roleLabel)
-				if (data.getRoles().get(role).isInverseOf(data.getRoles().get( r ) )) {
-					inverseFound = true;
-					continue;
-				}
-
-			if (inverseFound) {
-				inverseFound = false;
-				continue;
-			} else
-				return false;
-		}
-
-		return true;
+		RoleLabel rl = roleLabel.getInverseOf(data);
+		return rl.getInverseOf(data).equals(roleLabel);
 	}
 
 	public void setIdentifier(int id) {
@@ -117,34 +107,30 @@ public class RoleLabel extends HashSet<Integer> {
 		return this.identifier;
 	}
 
+	public void setRoleIds(Set<Integer> s) {
+		this.roleIds = s;
+	}
+
+	public Set<Integer> getRoleIds() {
+		return this.roleIds;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
-		if (!super.equals(obj))
-			return false;
 		if (this == obj)
 			return true;
 		if (obj == null )
 			return false;
-
 		if (getClass() != obj.getClass())
 			return false;
-
 		RoleLabel other = (RoleLabel) obj;
-
-		if (this.identifier > 0 && other.identifier > 0)
+		if (this.identifier >= 0 && other.identifier >= 0)
 			if (this.identifier == other.identifier)
 				return true;
 			else
 				return false;
-		//if (this.size() != other.size())
-		//	return false;
-
-		//for (Role r : this)
-		//	if (!other.contains(r))
-		//		return false;
-
 		//Check if two sets of identifiers equal. This is performed between two sets of Integers 
-		if( super.equals( other.getClass().getSuperclass() ) ) 
+		if( roleIds.equals(other.getRoleIds() ))  
 		     return true;
  
 		return false;
@@ -152,22 +138,15 @@ public class RoleLabel extends HashSet<Integer> {
 
 	public RoleLabel getInverseOf(ReasonerData data) {
 		RoleLabel rl = new RoleLabel();
-		for (Integer r : this) {
+		for (Integer r : roleIds) {
+		     boolean inv = (data.getRoles().get(r).isInverse() ? false : true );
 		     Role rInverse = new Role( data.getRoles().get(r).getName(), -1, data.getRoles().get(r).isTransitive(), 
-					data.getRoles().get(r).isFunctional(), data.getRoles().get(r).isInverse(), data.getRoles().get(r).isTransitiveClosure());
-		     if(data.getRoles().get(r).isInverse()){
-		   	rInverse = data.giveRoleIdentifier(rInverse);
-		        rInverse.setInverse(false);
-		     } else {
-		        rInverse = data.giveRoleIdentifier(rInverse);
-		        rInverse.setInverse(true);
-		     }
-		     data.addRole(rInverse);
+					data.getRoles().get(r).isFunctional(), inv, data.getRoles().get(r).isTransitiveClosure());
+		     rInverse = data.addRole(rInverse);	
 		     rl = rl.getNewRoleLabel(rInverse.getIdentifier(), data);
-		      
 		}
 
-		data.addRidge(data.giveRidgeIdentifier(rl));
+		
 		return rl;
 	}
 
@@ -175,7 +154,7 @@ public class RoleLabel extends HashSet<Integer> {
 	public String toString(ReasonerData data) {
 		StringBuilder sb = new StringBuilder();
 
-		for (Integer i : this) {
+		for (Integer i : roleIds) {
 			sb.append(data.getRoles().get( i.intValue() ).toString());
 			sb.append(System.getProperty("line.separator"));
 		}

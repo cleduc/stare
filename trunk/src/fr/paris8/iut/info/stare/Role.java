@@ -219,10 +219,14 @@ public class Role {
 			return true;
 		if (obj == null)
 			return false;
+		
 		if (getClass() != obj.getClass())
 			return false;
-
 		Role other = (Role) obj;
+		if (this.getName()==null && other.getName()!=null)
+			return false;
+		if (this.getName()!=null && other.getName()==null)
+			return false;
 		if ((identifier >= 0) && (other.identifier >= 0))
 			if (identifier == other.identifier)
 				return true;

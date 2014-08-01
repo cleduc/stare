@@ -229,10 +229,8 @@ public class StringToConcept {
 				return concept;
 			} else if (top.equals("AND")) {
 				Concept left, right;
-
 				left = makeConcept(data);
 				left = data.addConcept(left);
-				    
 				right = makeConcept(data);
 				right = data.addConcept(right);
 				 

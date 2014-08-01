@@ -31,7 +31,10 @@ import java.util.Set;
 
 import org.semanticweb.owlapi.model.ClassExpressionType;
 import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.AxiomType;
+import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLClassAxiom;
 import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataAllValuesFrom;
@@ -55,6 +58,7 @@ import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
 import org.semanticweb.owlapi.model.OWLObjectMaxCardinality;
 import org.semanticweb.owlapi.model.OWLObjectMinCardinality;
 import org.semanticweb.owlapi.model.OWLObjectOneOf;
+import org.semanticweb.owlapi.model.OWLObjectInverseOf;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLObjectPropertyDomainAxiom;
@@ -107,21 +111,21 @@ public class LoadOntology {
 
 		this.ontology = ontology;
 
-		increment = 1;
-		this.computeClasses();
-		this.computeDatatypes();
+		//increment = 1;
+		//this.computeClasses();
+		//this.computeDatatypes();
 		//reasonerData.initConceptMap(classes);
-		increment = 0;
-		this.computeProperties();
-		increment = 0;
+		//increment = 0;
+		//this.computeProperties();
+		//increment = 0;
 		this.makeConceptsFromSubClasses();
-		this.makeConceptsFromPropertyDomains();
-		this.makeConceptsFromPropertyRanges();
-		this.makeNominalConcepts();
-		this.makeConceptFromFunctional();
-		increment = 0;
-		this.makeAssertions();
-		increment = 0;
+		//this.makeConceptsFromPropertyDomains();
+		//this.makeConceptsFromPropertyRanges();
+		//this.makeNominalConcepts();
+		//this.makeConceptFromFunctional();
+		//increment = 0;
+		//this.makeAssertions();
+		//increment = 0;
 		this.makeRoleAxioms();
 		 
 		ConceptLabel allNNF = new ConceptLabel();
@@ -132,10 +136,12 @@ public class LoadOntology {
 		    reasonerData.getAxiomNNFs().add( new Integer(c.getIdentifier()) );	
 		    allNNF.add( new Integer(c.getIdentifier()) ); 
 		}
-		reasonerData.addCore(allNNF);
+		allNNF = reasonerData.addCore(allNNF);
 		reasonerData.setNNFConceptLabel(allNNF.getIdentifier());
+
 		reasonerData.setTransitiveClosureOfRoleHierarchy(new TransitiveClosureOfRoleHierarchy(
-				reasonerData.getRoleAxioms().values(), getStandardRoles()));
+				reasonerData.getRoleAxioms().values(), reasonerData.getRoles().values() ));
+		reasonerData.setTerminalConceptNames();
 	}
 
 	//compute all subconcepts of "concept"
@@ -202,7 +208,6 @@ public class LoadOntology {
 	 * classes if they are not present. Used by the constructor.
 	 */
 	private void computeClasses() {
-
 		for (OWLClass owlClass : ontology.getClassesInSignature()) {
 			if (owlClass.isBottomEntity())
 				this.classes.put(owlClass, 1);
@@ -212,8 +217,12 @@ public class LoadOntology {
 				this.classes.put(owlClass, increment);
 				increment++;
 			}
+			if( ! owlClass.isAnonymous()) {
+		              String name = owlClass.getIRI().toString();
+			      Concept c  = new Concept(name.substring(name.indexOf("#") + 1), -1, false, false);
+			      c = reasonerData.addConcept(c);
+			}
 		}
-
 		this.classes.put(new OWLClassImpl(IRI.create("Thing")), 0);
 	}
 
@@ -248,7 +257,7 @@ public class LoadOntology {
 					property.isTransitive(ontology),
 					property.isFunctional(ontology), false, false);
 			ontologyRoles.put(property, role);
-			reasonerData.addRole(role);
+			role = reasonerData.addRole(role);
 			increment++;
 		}
 
@@ -259,12 +268,12 @@ public class LoadOntology {
 					.indexOf("#") + 1), increment, false,
 					property.isFunctional(ontology), false, false);
 			ontologyRoles.put(property, role);
-			reasonerData.addRole(role);
+			role = reasonerData.addRole(role);
 			increment++;
 		}
 
 		this.addInverseProperties();
-		this.addTransitiveClosures();
+		//this.addTransitiveClosures();
 	}
 
 	/**
@@ -278,11 +287,12 @@ public class LoadOntology {
 
 		for (OWLObjectProperty property : ontology
 				.getObjectPropertiesInSignature()) {
-			reasonerData.addRole(new Role(property.toString().substring(
+			Role role = new Role(property.toString().substring(
 					property.toString().indexOf("#") + 1,
 					property.toString().length() - 1), increment, property
 					.isTransitive(ontology), property.isFunctional(ontology),
-					true, false));
+					true, false);
+			role = reasonerData.addRole(role);
 			increment++;
 		}
 	}
@@ -294,18 +304,19 @@ public class LoadOntology {
 	 * will never be functional and always be transitive.<br/>
 	 * Used by computeProperties.
 	 */
+	/*
 	private void addTransitiveClosures() {
 		List<Role> toAdd = new ArrayList<Role>();
-
-		for (Role role : reasonerData.getRoles().values()) {
-			toAdd.add(new Role(role.getName(), increment, true, false, role
-					.isInverse(), true));
+		for (Role role : reasonerData.getRoles().values() ) {
+			Role r = new Role(role.getName(), increment, true, false, role.isInverse(), true);
+			r = reasonerData.addRole(r);
+			toAdd.add(r);
 			increment++;
 		}
 
 		reasonerData.addRoles(toAdd);
 	}
-
+	*/
 	/**
 	 * Converts the axioms of the ontology dealing with domains of properties.<br/>
 	 * Used by the constructor.
@@ -397,6 +408,7 @@ public class LoadOntology {
 				.getObjectPropertiesInSignature())
 			if (property.isFunctional(ontology)) {
 				Concept top = new Concept("Thing", 0, false, false);
+				top = reasonerData.addConcept(top);
 				left =  new Concept(ontologyRoles.get(property).getIdentifier(),Type.SOME, top.getIdentifier());
 				right = new Concept(1, ontologyRoles.get(property).getIdentifier(), Type.MAX, top.getIdentifier());
 				nnf =  new Concept(Concept.negate(left.getIdentifier(), reasonerData),
@@ -417,30 +429,51 @@ public class LoadOntology {
 	private void makeConceptsFromSubClasses() {
 		OWLDataFactory factory = new OWLDataFactoryImpl();
 		OWLClassExpression expression, subClass = null, superClass = null;
-
-		for (OWLClass owlClass : classes.keySet()) {
+		//for (OWLClass owlClass : classes.keySet()) {
 			/* dealing with subClass axioms */
-			for (OWLSubClassOfAxiom subClassOfAxiom : ontology
-					.getSubClassAxiomsForSubClass(owlClass)) {
-				subClass = subClassOfAxiom.getSubClass();
-				superClass = subClassOfAxiom.getSuperClass();
-				expression = factory.getOWLObjectUnionOf(
+			//for (OWLSubClassOfAxiom subClassOfAxiom : ontology
+			//		.getSubClassAxiomsForSubClass(owlClass)) {
+
+
+			for (OWLAxiom classAxiom : ontology.getAxioms()) {
+
+				//System.out.println("type="+ classAxiom.getAxiomType().toString());
+
+				if(classAxiom.getAxiomType().equals(AxiomType.SUBCLASS_OF) ) {
+					/*
+					case DISJOINT_CLASSES:
+						subClass =  classAxiom.getSubClass();
+						superClass = classAxiom.getSuperClass();
+						expression = factory.getOWLObjectUnionOf(
 						factory.getOWLObjectComplementOf(subClass), superClass)
 						.getNNF();
-				reasonerData.addConceptAxiom(new ConceptAxiom(increment,
-						getConceptFromClassRecursive(subClass),
-						getConceptFromClassRecursive(superClass),
-						getConceptFromClassRecursive(expression)));
+						break;
+					case EQUIVALENCE_CLASSES:
+					*/
+					
+				subClass = ((OWLSubClassOfAxiom)classAxiom).getSubClass();
+				superClass =  ((OWLSubClassOfAxiom)classAxiom).getSuperClass();
+				expression = factory.getOWLObjectUnionOf(
+						factory.getOWLObjectComplementOf(subClass), superClass).getNNF();
+				Concept c1 = getConceptFromClassRecursive(subClass); 
+				//System.out.println("c1="+ c1.toString(reasonerData) + ", id=" +c1.getIdentifier());
+				Concept c2 = getConceptFromClassRecursive(superClass);
+				//System.out.println("c2="+ c2.toString(reasonerData) + ", id=" +c2.getIdentifier());
+				Concept c3 = getConceptFromClassRecursive(expression);
+				//System.out.println("c3="+ c3.toString(reasonerData) + ", id=" +c3.getIdentifier());
+				reasonerData.addConceptAxiom(new ConceptAxiom(increment,c1,c2,c3));
 				increment++;
 			}
 
 			/* dealing with the disjoint axioms */
-			for (OWLDisjointClassesAxiom disjointClassesAxiom : ontology
-					.getDisjointClassesAxioms(owlClass)) {
-				/*
+			/*
 				 * disjunction can have many members; they have to be treated
 				 * separately.
 				 */
+			//for (OWLDisjointClassesAxiom disjointClassesAxiom : ontology.getDisjointClassesAxioms(owlClass)) {
+			/*
+			for (OWLDisjointClassesAxiom disjointClassesAxiom : ontology.getDisjointClassesAxioms()) {
+				
 				for (OWLSubClassOfAxiom subClassOfAxiom : disjointClassesAxiom
 						.asOWLSubClassOfAxioms()) {
 					subClass = subClassOfAxiom.getSubClass();
@@ -455,8 +488,9 @@ public class LoadOntology {
 					increment++;
 				}
 			}
-
+			*/
 			/* dealing with equivalence axioms */
+			/*
 			for (OWLEquivalentClassesAxiom equivalentClassesAxiom : ontology
 					.getEquivalentClassesAxioms(owlClass)) {
 				int i = 0;
@@ -488,6 +522,7 @@ public class LoadOntology {
 						getConceptFromClassRecursive(subClass),
 						getConceptFromClassRecursive(expression)));
 			}
+			*/
 		}
 	}
 
@@ -509,12 +544,10 @@ public class LoadOntology {
 				if (n1.equals("owl:Thing"))
 					c1 = new Concept("Thing", 0, false, false);
 				else
-					c1 = reasonerData.giveConceptIdentifier(new Concept(n1
-							.substring(n1.indexOf("#") + 1, n1.length() - 1),
-							-1, false, true));
+					c1 = new Concept(n1.substring(n1.indexOf("#") + 1, n1.length() - 1),
+							-1, false, true);
 				n2 = classAssertionAxiom.getIndividual().toStringID();
-				c2 = reasonerData.giveConceptIdentifier(new Concept(n2
-						.substring(n2.indexOf("#") + 1), -1, false, true));
+				c2 = new Concept(n2.substring(n2.indexOf("#") + 1), -1, false, true);
 				c1 = reasonerData.addConcept(c1);
 				c2 = reasonerData.addConcept(c2);
 				reasonerData.addConceptAssertion(new ConceptAssertion(
@@ -537,11 +570,9 @@ public class LoadOntology {
 						property.isTransitive(ontology), property
 								.isFunctional(ontology), false, false));
 				n1 = propertyAssertionAxiom.getSubject().toStringID();
-				c1 = reasonerData.giveConceptIdentifier(new Concept(n1
-						.substring(n1.indexOf("#") + 1), -1, false, true));
+				c1 = new Concept(n1.substring(n1.indexOf("#") + 1), -1, false, true);
 				n2 = propertyAssertionAxiom.getObject().toStringID();
-				c2 = reasonerData.giveConceptIdentifier(new Concept(n2
-						.substring(n2.indexOf("#") + 1), -1, false, true));
+				c2 = new Concept(n2.substring(n2.indexOf("#") + 1), -1, false, true);
 				c1 = reasonerData.addConcept(c1);
 				c2 = reasonerData.addConcept(c2);
 				reasonerData.addRoleAssertion(new RoleAssertion(increment, r,
@@ -569,14 +600,36 @@ public class LoadOntology {
 	 * Used by the constructor.
 	 */
 	private void makeRoleAxioms() {
-
+		OWLObjectPropertyExpression subProperty=null;
+		OWLObjectPropertyExpression supProperty=null;
+		Role lRole=null;
+		Role rRole=null;
 		for (OWLObjectProperty property : ontology
 				.getObjectPropertiesInSignature()) {
-			for (OWLSubObjectPropertyOfAxiom axiom : ontology
-					.getObjectSubPropertyAxiomsForSubProperty(property)) {
-				reasonerData.addRoleAxiom(new RoleAxiom(increment,
-						ontologyRoles.get(axiom.getSubProperty()),
-						ontologyRoles.get(axiom.getSuperProperty())));
+			for (OWLSubObjectPropertyOfAxiom axiom : ontology.getObjectSubPropertyAxiomsForSubProperty(property)) {
+				
+				subProperty = axiom.getSubProperty();
+				supProperty = axiom.getSuperProperty();
+				boolean bInv,pInv;
+				if(subProperty instanceof OWLObjectInverseOf)
+				   bInv = true;
+			        else 
+				   bInv=false;
+				String name=null;
+				name = subProperty.getNamedProperty().getIRI().toString();
+				lRole = new Role(name.substring(name.indexOf("#") + 1), -1, 
+					subProperty.isTransitive(ontology),subProperty.isFunctional(ontology), bInv, false);
+				lRole=reasonerData.addRole(lRole);
+				if(supProperty instanceof OWLObjectInverseOf)
+				   pInv = true;
+			        else 
+				   pInv=false;
+				name = supProperty.getNamedProperty().getIRI().toString();
+				rRole = new Role(name.substring(name.indexOf("#") + 1), -1, 
+			                supProperty.isTransitive(ontology), supProperty.isFunctional(ontology), pInv, false);
+				rRole = reasonerData.addRole(rRole);
+				reasonerData.addRoleAxiom(new RoleAxiom(increment,lRole, rRole));
+						  
 				increment++;
 			}
 		}
@@ -606,18 +659,24 @@ public class LoadOntology {
 		/* expression not anonymous (terminal) */
 		if (!expression.isAnonymous()) {
 			String className = expression.asOWLClass().getIRI().toString();
-			return new Concept(className.substring(className.indexOf("#") + 1),
-					classes.get(expression), false, false);
+			//Concept c  = new Concept(className.substring(className.indexOf("#") + 1),
+			//		classes.get(expression), false, false);
+
+			/*There was an BUG BUG */
+			Concept c  = new Concept(className.substring(className.indexOf("#") + 1), -1, false, false);
+			c = reasonerData.addConcept(c);
+			return c;
 		}
 		/* otherwise... */
 		else {
 			Concept formulas[];
 			ClassExpressionType expressionType = expression
 					.getClassExpressionType();
-			Role role;
-			Concept concept;
+			Role role=null;
+			Concept concept=null;
 			int i;
-
+			OWLObjectPropertyExpression property=null;
+			String propertyName=null;
 			/*
 			 * different members and number of members for the expression,
 			 * depending of the operator
@@ -634,8 +693,18 @@ public class LoadOntology {
 				concept = reasonerData.addConcept(concept);
 				return concept;
 			case OBJECT_ALL_VALUES_FROM:
-				role = ontologyRoles.get(((OWLObjectAllValuesFrom) expression)
-						.getProperty());
+				property = ((OWLObjectAllValuesFrom) expression).getProperty();
+				propertyName = property.getNamedProperty().getIRI().toString();
+				if(property instanceof OWLObjectInverseOf){
+				  //System.out.println("make inverse= "+ propertyName.toString() );
+			          role = new Role(propertyName.substring(propertyName.indexOf("#") + 1), -1, property.isTransitive(ontology),
+					property.isFunctional(ontology), true, false);
+			          
+				} else {
+				  //System.out.println("make rec all role= "+property.toString());
+		                  role = new Role(propertyName.substring(propertyName.indexOf("#") + 1), -1, property.isTransitive(ontology), property.isFunctional(ontology), false, false);
+				}
+				role = reasonerData.addRole(role);
 				concept = getConceptFromClassRecursive(((OWLObjectAllValuesFrom) expression)
 						.getFiller());
 				
@@ -676,8 +745,16 @@ public class LoadOntology {
 				concept = reasonerData.addConcept(concept);
 				return concept;
 			case OBJECT_MAX_CARDINALITY:
-				role = ontologyRoles.get(((OWLObjectMaxCardinality) expression)
-						.getProperty());
+				property = ((OWLObjectMaxCardinality) expression).getProperty();
+				propertyName = property.getNamedProperty().getIRI().toString();;
+				if(property instanceof OWLObjectInverseOf){
+			          role = new Role(propertyName.substring(propertyName.indexOf("#") + 1), -1, property.isTransitive(ontology),
+					property.isFunctional(ontology), true, false);
+			          
+				} else 
+				   role = new Role(propertyName.substring(propertyName.indexOf("#") + 1), -1, property.isTransitive(ontology),
+					property.isFunctional(ontology), false, false);
+				role = reasonerData.addRole(role);
 				concept = getConceptFromClassRecursive(((OWLObjectMaxCardinality) expression)
 						.getFiller());
 				concept = new Concept( ((OWLObjectMaxCardinality) expression).getCardinality(), role.getIdentifier(),Type.MAX, concept.getIdentifier());
@@ -693,8 +770,16 @@ public class LoadOntology {
 				concept = reasonerData.addConcept(concept);
 				return concept;
 			case OBJECT_MIN_CARDINALITY:
-				role = ontologyRoles.get(((OWLObjectMinCardinality) expression)
-						.getProperty());
+				property = ((OWLObjectMinCardinality) expression).getProperty();
+				propertyName =  property.getNamedProperty().getIRI().toString();;
+				if(property instanceof OWLObjectInverseOf){
+			          role = new Role(propertyName.substring(propertyName.indexOf("#") + 1), -1, property.isTransitive(ontology),
+					property.isFunctional(ontology), true, false);
+			          
+				} else 
+				  role = new Role(propertyName.substring(propertyName.indexOf("#") + 1), -1, property.isTransitive(ontology),
+					property.isFunctional(ontology), false, false);
+				role = reasonerData.addRole(role);
 				concept = getConceptFromClassRecursive(((OWLObjectMinCardinality) expression)
 						.getFiller());
 				concept = new Concept( ((OWLObjectMinCardinality) expression).getCardinality(), role.getIdentifier(), Type.MIN, concept.getIdentifier());
@@ -710,10 +795,20 @@ public class LoadOntology {
 				concept = reasonerData.addConcept(concept);
 				return concept;
 			case OBJECT_SOME_VALUES_FROM:
-				role = ontologyRoles.get(((OWLObjectSomeValuesFrom) expression)
-						.getProperty());
+			        property = ((OWLObjectSomeValuesFrom) expression).getProperty();
+				propertyName = property.getNamedProperty().getIRI().toString();;
+				if(property instanceof OWLObjectInverseOf){
+			          //System.out.println("make inverse = "+ propertyName);
+			          role = new Role(propertyName.substring(propertyName.indexOf("#") + 1), -1, property.isTransitive(ontology),
+					property.isFunctional(ontology), true, false);
+			          
+				} else 
+				   role = new Role(propertyName.substring(propertyName.indexOf("#") + 1), -1, property.isTransitive(ontology),
+					property.isFunctional(ontology), false, false);
+				role = reasonerData.addRole(role);
 				concept = getConceptFromClassRecursive(((OWLObjectSomeValuesFrom) expression)
 						.getFiller());
+				
 				concept = new Concept(role.getIdentifier(), Type.SOME, concept.getIdentifier());
 				concept = reasonerData.addConcept(concept);
 				return concept;
@@ -779,9 +874,10 @@ public class LoadOntology {
 	 */
 	private Concept getConceptFromDataRange(OWLDataRange range) {
 		String typeName = range.asOWLDatatype().getIRI().toString();
-
-		return new Concept(typeName.substring(typeName.indexOf("#") + 1),
+		Concept c = new Concept(typeName.substring(typeName.indexOf("#") + 1),
 				datatypes.get(range.asOWLDatatype()), true, false);
+		reasonerData.addConcept(c);
+		return c;
 	}
 
 	/**

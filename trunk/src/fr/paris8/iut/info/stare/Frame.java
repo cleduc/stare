@@ -33,7 +33,8 @@ public class Frame {
 	private int lastIdOfStartype;
 	private int numberOfNominals;
 	private Set<Startype> stars = new HashSet<Startype>();
-
+	//for debug
+	private int ruleApplications=0;
 	/**
 	 * Creation wof the frame.
 	 * 
@@ -160,11 +161,121 @@ public class Frame {
 	 *            The data of the ontology.
 	 * @return The startype initialized.
 	 */
-	
-	public Startype init(ReasonerData data) throws CloneNotSupportedException {
+	public int getRuleApplications(){
+		return ruleApplications;
+	}
+	public Startype init(ReasonerData data)   {
 		Startype st = new Startype( data.getNNFConceptLabel() );
 		st = data.addStartype(st);
 		return st;
+	}
+
+	public void applyNonGeneratingRules(ReasonerData data)   {
+		Integer notSaturated = null;
+		while((notSaturated = data.getStartypeToExpand()) != null ) {
+		      Startype st = data.getStartypes().get(notSaturated);
+		      Startype sat = st;
+		      Set<Integer> concepts = new HashSet<Integer>(data.getCores().get(st.getCoreId()).getConceptIds());
+		      boolean saturated = false;
+                      while(! saturated ) {
+		      //for terminates when a new startype is created, or no new startype is created  for all concepts visited 
+		      for(Integer concept :  concepts) {
+			   boolean changed = false; // not used yet
+			  if (! data.getConcepts().get(concept).isTerminal() ) {
+			  switch (data.getConcepts().get(concept).getOperator()) {
+			  case INTERSECTION:
+				System.out.println("Rule INTER for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
+				sat = st.intersectionRule(concept, changed, data);
+				break;
+			  case UNION:
+				System.out.println("Rule UNION for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
+				sat = st.unionRule(concept, changed, data);
+				break;
+			  case ALL:
+				System.out.println("Rule ALL for startype "+  getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data) );
+				sat = st.allRule(concept, changed, data);
+				sat = st.transRule(concept, changed, data);
+				break;
+			 case  MAX: //CHOICE
+				System.out.println("Rule CHOICE for startype "+  getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data) );
+				sat = st.choiceRule(concept, changed, data);
+				break;
+			  default:
+				break;
+			  }
+		          }
+			  if(! st.equals(sat)) {
+		             st.setExpanded(sat.getIdentifier());
+			     st = sat;
+			     concepts = new HashSet<Integer>(data.getCores().get(st.getCoreId()).getConceptIds());
+			     saturated = false;	
+			     break;	
+			  } else
+                             saturated = true;
+		     }//for
+	           }
+		}
+	}
+
+	public void applyRules(ReasonerData data) {
+		Integer notSaturated = null;
+		while((notSaturated = data.getStartypeToExpand()) != null ) {
+		      Startype st = data.getStartypes().get(notSaturated);
+		      Startype sat = st;
+		      Set<Integer> concepts = new HashSet<Integer>(data.getCores().get(st.getCoreId()).getConceptIds());
+		      boolean saturated = false;
+                      while(! saturated ) {
+		      //for terminates when a new startype is created, or no new startype is created  for all concepts visited 
+		      for(Integer concept :  concepts) {
+			  boolean changed = false;// not used yet
+			  if (! data.getConcepts().get(concept).isTerminal() ) {
+			  switch (data.getConcepts().get(concept).getOperator()) {
+			  case INTERSECTION:
+				System.out.println("Rule INTER for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
+				sat = st.intersectionRule(concept, changed, data);
+				break;
+			  case UNION:
+				System.out.println("Rule UNION for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
+				sat = st.unionRule(concept, changed, data);
+				break;
+			  case SOME:
+				System.out.println("Rule SOME for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
+				sat = st.someRule(concept, changed, data);
+				break;
+			  case ALL:
+				System.out.println("Rule ALL and TRANSRULE for startype "+  getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data) );
+				sat = st.allRule(concept, changed, data);
+				sat = st.transRule(concept, changed, data);
+				break;
+			  case MIN:
+				System.out.println("Rule MIN for startype "+ getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data)  );
+				sat = st.minRule(concept, changed, data);
+				break;
+ 
+			case MAX:
+				System.out.println("Rule MAX and CH for startype "+ getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data) );
+				sat = st.maxRule(concept, changed, data);
+				sat = st.choiceRule(concept, changed, data);
+				break;
+			  default:
+				break;
+			  }
+		          }
+
+			  if(! st.equals(sat)) {
+		             st.setExpanded(sat.getIdentifier());
+			     st = sat;
+			     concepts = new HashSet<Integer>(data.getCores().get(st.getCoreId()).getConceptIds());
+			     saturated = false;	
+			     ruleApplications++;
+			     break;	
+			  } else
+			     //"saturated = true" only if "saturated = true" for each iteration of for 
+                             saturated = true;
+		     }//for
+	           }
+		   sat.setSaturated(true);
+		}
 	}
 	
 	/**
