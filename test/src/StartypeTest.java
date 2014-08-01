@@ -73,26 +73,48 @@ public class StartypeTest {
      
       OWLOntology onto1 = null;
       try {
-           onto1 = manager.loadOntology( IRI.create( "file:/usr/local/apps/homesvn/projects/stare/trunk/onto/union-some.owl"));
+           onto1 = manager.loadOntology( IRI.create( "file:/usr/local/apps/homesvn/projects/stare/trunk/onto/union-some-all-inv-trans.owl"));
 	 } catch (OWLOntologyCreationException ex) { 
 					ex.printStackTrace();   
       }
 
       LoadOntology onto = new LoadOntology(onto1); 
       ReasonerData data = onto.getData();
+	
+      for(Integer i : data.getRoles().keySet())
+          System.out.println("Loaded Roles ="+ data.getRoles().get(i).toString() );
+      for(Integer i : data.getConcepts().keySet())
+          System.out.println("Loaded Concepts ="+ data.getConcepts().get(i).toString(data) );
+      //for(Integer i : data.getRidges().keySet())
+      //    System.out.println("Ridges ="+ data.getRidges().get(i).toString(data) );
 
+      //for(Integer i : data.getRoles().keySet() ) {
+      //	   System.out.println("Subsumers of ="+ data.getRoles().get(i).toString() + ":" );
+      //	   for(Integer j : data.getSubsumers(i) ) 
+      //         System.out.println("subsumer ="+ data.getRoles().get(j).toString() );
+      //}
       Frame frame = new Frame(0);
       Startype star1 = frame.init(data);
 
       System.out.println("star1 = "+ star1.toString(data) );
+      
+      frame.applyRules(data);
+      int valid=0;
+      System.out.println("************** LIST OF ALL STARTYPES ("+ data.getStartypes().values().size() +")*******\\n");
+      for(Startype st : data.getStartypes().values() ) {
+	  if(st.isValid()) valid++;
+          //System.out.println( st.toString(data) );
+      }
+      System.out.println("*******************LIST OF VALID STARTYPES  ("+valid+")**************\\n");
+      for(Startype st : data.getStartypes().values() ) {
+	  if(st.isValid())
+          System.out.println( st.toString(data) );
+      }
+      System.out.println("THE NUMBER OF RULE APPLICATIONS  = "+frame.getRuleApplications());
+      
 
-      //star1 = frame.init(data, null);
-
-      //System.out.println("star2 = "+star1.toString() );
-
-      //for(Startype st : star1.getProgeny()) {
-         // System.out.println("stars  ="+st.toString() );
-      //}
+      for(Integer i : data.getConcepts().keySet())
+          System.out.println("Final Concepts ="+ data.getConcepts().get(i).toString(data) );
  } 
 }
  

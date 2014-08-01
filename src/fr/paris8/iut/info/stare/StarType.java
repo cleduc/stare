@@ -42,7 +42,7 @@ public class Startype implements Cloneable {
 	// set of rays and how many times each of which is tiled  
 	private HashMap<Integer, Integer> rays;
 	// distinct rays of the startype (for the MIN rule)
-	private Map<Integer, Set<Integer>> distinctRays;
+	//private Map<Integer, Set<Integer>> distinctRays;
 	// state of the startype
 	private boolean isSaturated, isNominal, isValid;
 	// set of startypes tiled with a ray
@@ -50,7 +50,7 @@ public class Startype implements Cloneable {
 	// startype dependence (for the UNION, CH or MAX rule)
 	private Set<Integer> progeny;
 	//identifier of origine startype 
-	private Integer ancestorId;
+	private Integer ancestorId, expandedId;
 	
 	/**
 	 * Creation with an id.
@@ -66,8 +66,9 @@ public class Startype implements Cloneable {
 		rays = new HashMap<Integer, Integer>();
 		progeny = new HashSet<Integer>();
 		ancestorId = null;
+		expandedId = null;
 		tiledStartypes = new HashMap<Integer, Set<Integer>>();
-		distinctRays = new HashMap<Integer, Set<Integer>>();
+		//distinctRays = new HashMap<Integer, Set<Integer>>();
 	}
 	/**
 	 * Creation of a nominal startype, with a core label.
@@ -85,8 +86,9 @@ public class Startype implements Cloneable {
 		rays = new HashMap<Integer, Integer>();
 		progeny = new HashSet<Integer>();
 		ancestorId = null;
+		expandedId = null;
 		tiledStartypes = new HashMap<Integer, Set<Integer>>();
-		distinctRays = new HashMap<Integer, Set<Integer>>();
+		//distinctRays = new HashMap<Integer, Set<Integer>>();
 	}
 
 	public Startype(Integer clId, Integer rlId) {
@@ -98,8 +100,9 @@ public class Startype implements Cloneable {
 		rays.put(rlId, new Integer(0));
 		progeny = new HashSet<Integer>();
 		ancestorId = null;
+		expandedId = null;
 		tiledStartypes = new HashMap<Integer, Set<Integer>>();
-		distinctRays = new HashMap<Integer, Set<Integer>>();
+		//distinctRays = new HashMap<Integer, Set<Integer>>();
 	}
 
 	/**
@@ -110,25 +113,40 @@ public class Startype implements Cloneable {
 	 * @param id2
 	 *            The identifier of the clone.
 	 */
-	@Override
-	protected Object clone() throws CloneNotSupportedException {
-		return super.clone();
+	//It creates an exact copy of "st" except for "id=-1"
+	protected Startype(Startype st )   {		
+		this.setIdentifier(-1);
+		this.setCounter(st.getCounter());
+		this.setCoreId (new Integer(st.getCoreId()));
+		this.setRays(new HashMap<Integer, Integer>());
+		for(Integer r : st.getRays().keySet()) {
+		   Integer nb = new Integer(st.getRays().get(r));
+		   this.rays.put(r, nb );
+		}
+		this.setNominal(st.isNominal());
+		this.setValid(st.isValid());
+		this.setSaturated(st.isSaturated());
+		//this.setDistinctRays(new HashMap<Integer, Set<Integer>>());
+		//for(Integer r : st.getDistinctRays().keySet()) {
+		//   Set<Integer> rays = new HashSet<Integer>(st.getDistinctRays().get(r) );
+		//   this.getDistinctRays().put(r, rays);
+		//}
+		if(st.getAncestor()==null)
+		    this.setAncestor(null);
+		else 
+		    this.setAncestor(new Integer(st.getAncestor()));
+		if(st.getExpanded()==null)
+		    this.setExpanded(null);
+		else 
+		    this.setExpanded(new Integer(st.getExpanded()));
+		this.setProgeny(new HashSet<Integer>(st.getProgeny()));
+		this.setTiledStartypes(new HashMap<Integer, Set<Integer>>());
+		for(Integer r : st.getTiledStartypes().keySet() ) {
+		   Set<Integer> ss = new HashSet<Integer>(st.getTiledStartypes().get(r));
+		   this.getTiledStartypes().put(r, ss);
+		}
 	}
-	/*
-	public Startype(Startype st2) {
-		this.id = id2;
-		this.counter = 1;
-		this.core = new ConceptLabel(st2.core);
-		this.rays = new HashSet<Ray>(st2.rays);
-		this.isNominal = false;
-		//this.isValid = false;
-		progeny = new HashSet<Startype>();
-		this.isSaturated = st2.isSaturated;
-		ancestor = null;
-		this.distinctRays = new ArrayList<Set<Integer>>(st2.distinctRays);
-		paved = new HashMap<Integer, Integer>();
-	}
-	*/
+	 
 	/**
 	 * Add a new ray : ensure that all rays are different.
 	 * 
@@ -136,52 +154,137 @@ public class Startype implements Cloneable {
 	 *            Ray to add to the startype.
 	 * @return true if the ray had been added, false otherwise.
 	 */
-	public Startype addRay(Integer ray, ReasonerData data) throws CloneNotSupportedException {
+
+	public Startype addRay(Integer ray, ReasonerData data)   {
 		//global ray id is also local ray id in a startype
 		//since all rays of a startype are different
-		Startype st = (Startype)this.clone();
+		Startype st = new Startype(this);
 		if( ! st.getRays().containsKey( ray ) )
 		    st.getRays().put( ray, new Integer(0) );
 		return st;
 	}
 
-	public Startype updateRidge(Integer role, Integer ray, ReasonerData data) throws CloneNotSupportedException {
-		Startype st = (Startype)this.clone();
- 		Ray ry = data.getRays().get(ray);
-		Ray newRay = ry.getNewRayByRole(role, data); 
+
+	public Startype addRays(Set<Integer> rs, ReasonerData data)   {
+		Startype st = new Startype(this);
+		for(Integer r : rs) {
+		    if( ! st.getRays().containsKey( r ) )
+		        st.getRays().put(r, new Integer(0) );
+		}
+		return st;
+	}
+
+	public Startype replaceRay(Integer or, Integer nr, ReasonerData data)   {
+		Startype st = new Startype(this);
+		st.getRays().remove(or);			
+		st.getRays().put( nr, new Integer(0) );
+		return st;
+	}
+
+	public Startype replaceRay(Integer or1, Integer or2, Integer nr, ReasonerData data)   {
+		Startype st = new Startype(this);
+		st.getRays().remove(or1);
+		st.getRays().remove(or2);			
+		st.getRays().put( nr, new Integer(0) );
+		return st;
+	}
+
+	public Startype getStartypeByRidge(List<Integer> roles, Integer ray, ReasonerData data)   {
+		Set<Integer> rSet = new HashSet();
+		rSet.addAll(roles);
+		Startype st = new Startype(this);
+		Ray ry = data.getRays().get(ray);
+		Ray newRay = ry.getNewRayByRole(rSet, data); 
 		st.getRays().put(newRay.getIdentifier(), new Integer(0) );
 		st.getRays().remove(ry.getIdentifier());
-		return st;
-	}
-
-	public Startype updateRidge(Set<Integer> roles, Integer ray, ReasonerData data) throws CloneNotSupportedException {
-		Startype st = (Startype)this.clone();
-		Ray ry = data.getRays().get(ray);
-		Ray newRay = ry.getNewRayByRole(roles, data); 
-		st.getRays().put(newRay.getIdentifier(), new Integer(0) );
-		st.getRays().remove(ry.getIdentifier());	 
+		st = data.addStartype(st);	 
 		return st;
 	}
 
 
-	public Startype updateTip(Integer concept, Integer ray, ReasonerData data) throws CloneNotSupportedException {
-		Startype st = (Startype)this.clone();
+	public Startype getStartypeByTip(List<Integer> concepts, Integer ray, ReasonerData data)   {
+		Set<Integer> cSet = new HashSet();
+		cSet.addAll(concepts);
+		Startype st = new Startype(this);
 		Ray ry = data.getRays().get(ray);
-		Ray newRay = ry.getNewRayByTip(concept, data); 
+		Ray newRay = ry.getNewRayByTip(cSet, data); 
 		st.getRays().put(newRay.getIdentifier(), new Integer(0) );
 		st.getRays().remove(ry.getIdentifier()); 
+		st = data.addStartype(st);
 		return st;
 	}
 
-	public Startype updateTip(Set<Integer> concepts, Integer ray, ReasonerData data) throws CloneNotSupportedException {
-		Startype st = (Startype)this.clone();
-		Ray ry = data.getRays().get(ray);
-		Ray newRay = ry.getNewRayByTip(concepts, data); 
-		st.getRays().put(newRay.getIdentifier(), new Integer(0) );
-		st.getRays().remove(ry.getIdentifier()); 
-		return st;
+	
+
+	/**
+	 * Check if the startype is semantically valid.<br/>
+	 * 
+	 * @return true if the startype is valid, false otherwise.
+	 */
+	
+	public boolean isValid(ReasonerData data) {
+		//A startype may be invalid even if it is not saturated
+		if (isSaturated) {
+			for (Integer i1 : data.getCores().get(getCoreId()).getConceptIds() ) {
+				Concept c1 = data.getConcepts().get(i1);
+				for (Integer i2 : data.getCores().get(getCoreId()).getConceptIds() ) {
+				     if (Concept.negate(i1, data).equals(i2))
+						return false;
+				}
+				if (c1.getOperator() == Type.MAX) {
+				     Integer r = c1.getRoleId();
+				     Integer c = c1.getChildren().get(0);
+				     int nb =  c1.getCardinality();
+				     int nbRays=0;
+				     for (Integer ray : getRays().keySet()) {
+					  if(data.getRidges().get(data.getRays().get(ray).getRidgeId()).contains(r) && 
+					     data.getCores().get(data.getRays().get(ray).getTipId()).contains(c))
+					  nbRays++;
+				     } 
+				     if(nbRays > nb)
+					return false;
+				}
+			}
+			return true;
+		} else
+		  return false;
+	}
+	
+	/**
+	 * Sets the isSaturated attribute of the startype at true.
+	 */
+	public void setSaturated() {
+		this.isSaturated = true;
+	}
+	public void setSaturated(boolean b) {
+		this.isSaturated = b;
 	}
 
+	/**
+	 * Check if the startype is saturated.
+	 * 
+	 * @return true if the startype is saturated, false otherwise.
+	 */
+	public boolean isSaturated() {
+		return isSaturated;
+	}
+
+	public void setNominal(boolean b) {
+		this.isNominal = b;
+	}
+
+	public boolean isNominal() {
+		return this.isNominal ;
+	}
+
+	public void setValid(boolean b) {
+		this.isValid = b;
+	}
+
+	public boolean isValid() {
+		return this.isValid ;
+	}
+ 
 	/**
 	 * Gives the core of the startype.
 	 * 
@@ -200,9 +303,30 @@ public class Startype implements Cloneable {
 	 * 
 	 * @return The set of rays for this startype.
 	 */
-	public HashMap<Integer, Integer> getRays() {
+	public Map<Integer, Integer> getRays() {
 		return rays;
 	}
+	
+	public void setRays(HashMap<Integer, Integer> r) {
+		rays = r;
+	}
+
+	public Map<Integer, Set<Integer>> getTiledStartypes() {
+		return tiledStartypes;
+	}
+
+	public void setTiledStartypes(HashMap<Integer, Set<Integer>>  m) {
+		tiledStartypes = m;
+	}
+
+	public Set<Integer> getProgeny() {
+		return progeny;
+	}
+
+	public void setProgeny(Set<Integer> p) {
+		progeny = p;
+	}
+
 	
 	public int getCounter() {
 		return counter;
@@ -219,65 +343,22 @@ public class Startype implements Cloneable {
 	}
 
 	/**
-	 * Check if the startype is semantically valid.<br/>
-	 * 
-	 * @return true if the startype is valid, false otherwise.
-	 */
-	/*
-	public boolean isValid(ReasonerData data) {
-		if (isSaturated) {
-			Concept c1, c2;
-			for (Integer i1 : core ) {
-				c1 = data.getConcepts().get(i1);
-				for (Integer i2 : core) {
-				     c2 = data.getConcepts().get(i2);	 
-				     if (Concept.negate(c1, data).equals(c2))
-						return false;
-
-					if ((c1.getOperator() == Type.MAX)
-							&& (c2.getOperator() == Type.MIN))
-						if ((c1.getCardinality() < c2.getCardinality())
-								&& (c1.getRole().equals(c2.getRole()))
-								&& c1.getChildren().equals(c2.getChildren()))
-							return false;
-				}
-			}
-			return true;
-		} else
-			return false;
-		
-	}
-	*/
-	/**
-	 * Sets the isSaturated attribute of the startype at true.
-	 */
-	public void setSaturated() {
-		this.isSaturated = true;
-	}
-
-	/**
-	 * Check if the startype is saturated.
-	 * 
-	 * @return true if the startype is saturated, false otherwise.
-	 */
-	public boolean isSaturated() {
-		return isSaturated;
-	}
-
-	/**
 	 * Adds a list of concepts to the core of the startype.
 	 * 
 	 * @param concepts
 	 *            The list of concepts to be added.
 	 */
 	//
-	
-	public Startype updateCore(Set<Integer> concepts, ReasonerData data) throws CloneNotSupportedException {
-		Startype st = (Startype)this.clone();
+
+	public Startype getStartypeByCore(List<Integer> concepts, ReasonerData data)   {
+		Startype st = new Startype(this);
 		ConceptLabel cl = data.getCores().get( coreId );
-		cl = cl.getNewConceptLabel(concepts, data); 
-		if(cl.getIdentifier() == coreId.intValue() )
-		   return this;
+		Set<Integer> cSet = new HashSet();
+		cSet.addAll(concepts);
+		cl = cl.getNewConceptLabel(cSet, data); 
+		if( coreId.equals(new Integer(cl.getIdentifier())) )
+		   return this;		 
+		st.setCoreId( cl.getIdentifier() );
 		//update each ray since startype core is a component of each ray
 		for(Integer i : this.getRays().keySet() ) {
 		     Ray ray = data.getRays().get(i.intValue()).getNewRayByCore(i, data);
@@ -286,37 +367,20 @@ public class Startype implements Cloneable {
 		     st.getRays().put( ray.getIdentifier(), new Integer(0) );
 		}
 		st = data.addStartype(st);
-		return st;
-	}
-
-	public Startype updateCore(Integer concept, ReasonerData data) throws CloneNotSupportedException {
-		Startype st = (Startype)this.clone();
-		ConceptLabel cl = data.getCores().get( coreId );
-		cl = cl.getNewConceptLabel(concept, data);
-		if(cl.getIdentifier() == coreId.intValue())
-		   return this;
-		//update each ray since startype core is a component of each ray
-		for(Integer i : this.getRays().keySet() ) {
-		     Ray ray = data.getRays().get(i).getNewRayByCore(i, data);
-		     ray = data.addRay(ray);
-		     st.getRays().remove( i );
-		     st.getRays().put( ray.getIdentifier(), new Integer(0) );
-		}
-		st = data.addStartype(st);
+		//System.out.println("id core Result = " +st.getCoreId() +", start type id= " + st.getIdentifier() );
 		return st;
 	}
 	
 	/**
-	 * Check if the startype matches another startype "st" over a ray "r" of
-	 * "st". It returns a ray of the startype that matches "r", or null if no
-	 * ray has been found.
-	 * 
-	 * @param st
-	 * @param r
+	 * Check if the startype matches another startype "startype2" over its ray "r2" 
+	 * via "ray2" of this startype. This may lead to apply rules to "startype2"  and this startype.
+	 * This method requires that "startype2" and this startype must be valid 
+	 * @param startype
+	 * @param ray of 
 	 * @return
 	 */
 	/*
-	public Ray match(Startype st, Ray r) {
+	public Ray match(Integer ray1, Integer startype2, Integer ray2) {
 		for (Ray ray : this.rays) {
 			if (ray.getTip().equals(st.core))
 				if (ray.getRidge().isInverseOf(r.getRidge()))
@@ -351,30 +415,25 @@ public class Startype implements Cloneable {
 	 */
 
 	//This method allows to expand the startype progressively 
-	public Startype intersectionRule(Integer concept, ReasonerData data) throws CloneNotSupportedException {
-		Startype st = null; 
-		for (Integer child : data.getConcepts().get(concept).getChildren() ) {
-			st = updateCore(child, data);
-		}
-		return st;
+	public Startype intersectionRule(Integer concept, boolean changed, ReasonerData data)   { 
+		    List<Integer> l = new ArrayList(0);
+		    boolean applied = false;
+		    for(Integer c : data.getConcepts().get(concept).getChildren()) {
+			if( ! data.getCores().get(coreId).contains(c) ) {
+			    l.add(c);
+			    applied = true;
+			}
+		    }
+		    if(! applied ) 
+			return this;
+		    Startype st = getStartypeByCore(l, data);
+		    st = data.addStartype(st);
+		    st.setValid(st.isValid(data));
+		    changed = true;
+		    return st;
 	}
 	
-	//This method allows to expand the startype progressively
-	/*
-	public Startype intersectionRule(Integer concept) {
-		List<Integer> concepts = new ArrayList<Concept>();
-
-		for (Integer child : concept.getChildren()) {
-			core.add(child);
-			concepts.add(child);
-		}
-
-		if (concepts.size() > 0)
-			return concepts;
-		else
-			return null;
-	}
-	*/
+	 
 	/**
 	 * Rule about the transitive closure.
 	 * 
@@ -403,74 +462,143 @@ public class Startype implements Cloneable {
 	 *            Identifier of the alternative startype to be created in the
 	 *            rule.
 	 */
-	/*
-	public Concept unionRule(Concept concept, ReasonerData data, Frame frame) {
-		// clone the startype
-		Startype st2 = new Startype(this, frame.getLastIDOfStartype());
-		Concept c1, c2;
-
-		// apply the rule
-		c1 = concept.getChildren().get(0);
-		c2 = concept.getChildren().get(1);
-
-		if ((!this.core.contains(c1) && !data.getAxiomNNFs().contains(c1))
-				&& (!this.core.contains(c2) && !data.getAxiomNNFs()
-						.contains(c2))) {
-			this.core.add(c1);
-			st2.core.add(c2);
-
-			// create a link
-			st2.ancestor = this;
-			this.progeny.add(st2);
-			frame.incrementLastIDOfStartype();
-
-			return c1;
-		} else if ((!this.core.contains(c1) && !data.getAxiomNNFs()
-				.contains(c1))
-				&& (this.core.contains(c2) || data.getAxiomNNFs().contains(c2))) {
-			st2.core.add(c1);
-
-			// create a link
-			st2.ancestor = this;
-			this.progeny.add(st2);
-			frame.incrementLastIDOfStartype();
-
-			return null;
-		} else if ((this.core.contains(c1) || data.getAxiomNNFs().contains(c1))
-				&& (!this.core.contains(c2) && !data.getAxiomNNFs()
-						.contains(c2))) {
-			st2.core.add(c2);
-
-			// create a link
-			st2.ancestor = this;
-			this.progeny.add(st2);
-			frame.incrementLastIDOfStartype();
-
-			return null;
-		} else
-			return null;
+	public Startype unionRule(Integer concept, boolean changed, ReasonerData data)   {
+		List<Integer> l1 = new ArrayList<Integer>(0);
+		List<Integer> l2 = new ArrayList<Integer>(0);
+		Integer i1 = data.getConcepts().get(concept).getChildren().get(0);
+		Integer i2 = data.getConcepts().get(concept).getChildren().get(1);
+		if( data.getCores().get(coreId).contains(i1) || data.getCores().get(coreId).contains(i2)) 
+		    return this;
+		l1.add(i1);
+		l2.add(i2);
+		Startype st1 = getStartypeByCore(l1, data);
+		Startype st2 = getStartypeByCore(l2, data);
+		st2.setAncestor(st1.getIdentifier());
+		st1.getProgeny().add(st2.getIdentifier());
+		st1.setValid(st1.isValid(data));
+		st2.setValid(st2.isValid(data));
+		changed = true;
+		return st1;
 	}
-	*/
+	 
+        
+	
 	/**
 	 * Rule of some.
 	 * 
 	 * @param concept
 	 *            Concept to apply the rule.
 	 */
-	/*
-	public void someRule(Concept concept, ReasonerData data) {
-		Role role = concept.getRole();
-		Concept child = concept.getChildren().get(0);
-		Ray r = new Ray(role, child);
-
-		for (Ray ray : this.rays)
-			if ((ray.getRidge().contains(role))
-					&& (ray.getTip().contains(child)))
-				return;
-
-		this.addRay(r);
+	
+	public Startype someRule(Integer concept, boolean changed, ReasonerData data)   {
+		Integer role = data.getConcepts().get(concept).getRoleId();
+		Integer child = data.getConcepts().get(concept).getChildren().get(0);
+		Set<Integer> names = data.getSomeNames(concept);
+		ConceptLabel currentCore = data.getCores().get(coreId); 
+		ConceptLabel newCore = currentCore.getNewConceptLabel((Integer)names.toArray()[0], data);
+		//System.out.println("nnF = "+data.getAxiomNNFs());
+		ConceptLabel tl = new ConceptLabel(child);
+		tl = tl.getNewConceptLabel((Integer)names.toArray()[1], data);
+		tl = tl.getNewConceptLabel(data.getAxiomNNFs(), data);
+		//System.out.println("new tip = "+ tl.toString(data)+ " id new tip = "+tl.getIdentifier());
+		for (Integer ray : this.getRays().keySet()) {
+			//System.out.println("some role="+ data.getRoles().get(role).toString());
+			Integer ridgeId = data.getRays().get(ray).getRidgeId();
+			RoleLabel rl2 = data.getRidges().get(ridgeId);
+			//System.out.println("some ridge="+ ridgeId);
+			//System.out.println("some ridge content ="+ rl2.toString(data) );
+			Integer tipId = data.getRays().get(ray).getTipId();
+			Integer coreId = data.getRays().get(ray).getCoreId();
+			ConceptLabel cl = data.getCores().get(tipId);
+			//System.out.println("tip = "+ cl.toString(data)+ " id, "+tipId);
+			if ( cl.contains( child )  &&  rl2.contains( role )) {	 
+				return this;
+			}
+		}
+		RoleLabel rl = new RoleLabel(role, data);
+		for(Integer i : data.getSubsumers( role ))
+		        rl.add(i);
+		rl = data.addRidge(rl);
+		Ray r = new Ray(rl.getIdentifier(), newCore.getIdentifier(), tl.getIdentifier(), data);
+		r = data.addRay(r);
+		//System.out.println("Ray added = "+ r.toString(data));
+		Startype st = this.addRay(r.getIdentifier(), data);
+		st = this.addRay(r.getIdentifier(), data);
+		st.setCoreId(newCore.getIdentifier());	
+		for (Integer ray : st.getRays().keySet()) {
+		     Ray or = data.getRays().get(ray);
+		     Ray r2 = or.getNewRayByCore((Integer)names.toArray()[0], data);
+		     r2 = data.addRay(r2);
+		     st=st.replaceRay(or.getIdentifier(), r2.getIdentifier(), data);
+		}
+		st = data.addStartype(st);
+		st.setValid(st.isValid(data));
+		changed = true;
+		return st;
 	}
-	*/
+
+	/**
+	 * Rule of min.
+	 * 
+	 * @param concept
+	 *            Concept to apply the rule.
+	 */
+
+	public boolean checkForMinRays(Integer role, Integer concept, int N, ReasonerData data) {
+		int c = 0;
+	        for (Integer ray : this.getRays().keySet()) {
+		     //System.out.println("some role="+ data.getRoles().get(role).toString());
+		     Integer ridgeId = data.getRays().get(ray).getRidgeId();
+		     Integer tipId = data.getRays().get(ray).getTipId();
+		     if ( data.getCores().get(tipId).contains( concept )  &&  
+			     data.getRidges().get(ridgeId).contains( role )) {	 
+			  c++;
+		          if(c>=N) return true;	
+			}
+	        }
+		return false;
+	}
+	
+	
+
+	public Startype minRule(Integer concept, boolean changed, ReasonerData data) {
+		Integer role = data.getConcepts().get(concept).getRoleId();
+		Integer child = data.getConcepts().get(concept).getChildren().get(0);
+		Integer card = data.getConcepts().get(concept).getCardinality();
+		if(checkForMinRays(role, child, card, data))
+		   return this;
+		Set<Integer> names = data.getMinNames(concept);
+		ConceptLabel currentCore = data.getCores().get(coreId); 
+		ConceptLabel newCore = currentCore.getNewConceptLabel((Integer)names.toArray()[0], data);		
+		Set<Integer> rays = new HashSet();
+		for (int i=0; i< card; i++) {
+		     ConceptLabel tl = new ConceptLabel(child);		
+		     tl = tl.getNewConceptLabel((Integer)names.toArray()[i+1], data);
+		     tl = tl.getNewConceptLabel(data.getAxiomNNFs(), data);
+		     RoleLabel rl = new RoleLabel(role, data);
+		     for(Integer j : data.getSubsumers( role ))
+		        rl.add(j);
+		     rl = data.addRidge(rl);
+		     Ray r = new Ray(rl.getIdentifier(), newCore.getIdentifier(), tl.getIdentifier(), data);
+		     r = data.addRay(r);
+		     // add the created rays to the array of distinct rays
+		     rays.add(r.getIdentifier());
+		     //System.out.println("Ray added = "+ r.toString(data));
+	        }
+		Startype st = this.addRays(rays, data);	
+		st.setCoreId(newCore.getIdentifier());	
+		for (Integer ray : st.getRays().keySet()) {
+		     Ray or = data.getRays().get(ray);
+		     Ray r = or.getNewRayByCore((Integer)names.toArray()[0], data);
+		     r = data.addRay(r);
+		     st=st.replaceRay(or.getIdentifier(), r.getIdentifier(), data);
+		}
+		st = data.addStartype(st);
+		st.setValid(st.isValid(data));
+		changed = true;
+		return st;
+	}
+	
 	/**
 	 * Rule of transitive some.
 	 * 
@@ -502,19 +630,125 @@ public class Startype implements Cloneable {
 	 * @param concept
 	 *            Concept to apply the rule.
 	 */
-	/*
-	public void allRule(Concept concept) {
-		Role role = concept.getRole();
-		Concept child = concept.getChildren().get(0);
-
-		for (Ray ray : this.rays)
-			if ((ray.getRidge().contains(role))
-					&& (!ray.getTip().contains(child))) {
-				ray.addToTip(child);
-				break;
+	public Startype allRule(Integer concept, boolean changed, ReasonerData data) {
+		Integer role = data.getConcepts().get(concept).getRoleId();
+		Integer child = data.getConcepts().get(concept).getChildren().get(0);
+		for (Integer ray : this.getRays().keySet()) {
+			Integer ridgeId = data.getRays().get(ray).getRidgeId();
+			RoleLabel rl2 = data.getRidges().get(ridgeId);
+			//System.out.println("some ridge="+ ridgeId);
+			//System.out.println("some ridge content ="+ rl2.toString(data) );
+			Integer tipId = data.getRays().get(ray).getTipId();
+			ConceptLabel cl = data.getCores().get(tipId);
+			//System.out.println("tip = "+ cl.toString(data)+ " id, "+tipId);
+			if ( rl2.contains( role )) {
+				if (cl.contains( child )) 	 
+				    return this;
+				else {
+				    ConceptLabel tl = cl.getNewConceptLabel(child, data);
+				     //System.out.println("Child = "+ data.getConcepts().get(child).toString(data));
+				     //System.out.println("Old tip = "+ cl.toString(data));	
+				     //System.out.println("New tip = "+ tl.toString(data));
+				    Ray r = new Ray(rl2.getIdentifier(), coreId, tl.getIdentifier(), data);
+				    r = data.addRay(r);
+				    //System.out.println("Ray added = "+ r.toString(data));
+				    Startype st = replaceRay(ray, r.getIdentifier(), data); 	
+				    st = data.addStartype(st);
+				    st.setValid(st.isValid(data));
+				    changed = true;
+				    return st;
+				}
 			}
+		}
+		return this;
 	}
-	*/
+
+	/**
+	 * TRANS Rule. The rule terminates when it is applied to a concept 
+	 * 
+	 * @param concept
+	 *            Concept to apply the rule.
+	 */
+	public Startype transRule(Integer concept, boolean changed, ReasonerData data) {
+		Integer role = data.getConcepts().get(concept).getRoleId();
+		Integer child = data.getConcepts().get(concept).getChildren().get(0);
+		for (Integer ray : this.getRays().keySet()) {
+			Integer ridgeId = data.getRays().get(ray).getRidgeId();
+			RoleLabel rl2 = data.getRidges().get(ridgeId);
+			//System.out.println("trans ridge="+ ridgeId);
+			//System.out.println("trans ridge content ="+ rl2.toString(data) );
+			Integer tipId = data.getRays().get(ray).getTipId();
+			ConceptLabel cl = data.getCores().get(tipId);
+			//System.out.println("trans tip ="+ cl.toString(data) );
+			//System.out.println("Role for trans role= "+ data.getRoles().get(role).toString() + " id, "+ role+", trans =" + data.getRolesForTransRule(role).toString());
+			for(Integer trans : data.getRolesForTransRule(role)) {
+			    Concept transAllConcept =  new Concept(trans, Type.ALL, child);
+			    transAllConcept = data.addConcept(transAllConcept);
+			    //System.out.println("trans concept id ="+ transAllConcept.getIdentifier()+", content= "+ transAllConcept.toString(data) );
+			    if ( rl2.contains( data.getRoles().get(trans) )) {
+				if ( cl.contains( transAllConcept.getIdentifier() )) 
+			              return this;
+				else {
+				    cl = cl.getNewConceptLabel(transAllConcept.getIdentifier(), data);
+				    Ray r = new Ray(rl2.getIdentifier(), coreId, cl.getIdentifier(), data);
+				    r = data.addRay(r);
+				    //System.out.println("Ray added = "+ r.toString(data));
+				    Startype st = replaceRay(ray, r.getIdentifier(), data); 	
+				    st = data.addStartype(st);
+			            st.setValid(st.isValid(data));
+			    	    changed = true;
+		                    return st;
+				} 
+			    }
+			}
+		}
+		return this;
+	}
+
+	/**
+	 * CHOICE Rule. The rule terminates when it is applied to a concept 
+	 * 
+	 * @param concept
+	 *            Concept to apply the rule.
+	 */
+	public Startype choiceRule(Integer concept, boolean changed, ReasonerData data) {
+		Integer role = data.getConcepts().get(concept).getRoleId();
+		Integer child = data.getConcepts().get(concept).getChildren().get(0);
+		Integer notChild = Concept.negate(child, data);
+		for (Integer ray : this.getRays().keySet()) {
+			Integer ridgeId = data.getRays().get(ray).getRidgeId();
+			RoleLabel rl2 = data.getRidges().get(ridgeId);
+			//System.out.println("some ridge="+ ridgeId);
+			//System.out.println("some ridge content ="+ rl2.toString(data) );
+			Integer tipId = data.getRays().get(ray).getTipId();
+			ConceptLabel cl = data.getCores().get(tipId);
+			//System.out.println("tip = "+ cl.toString(data)+ " id, "+tipId);
+			if ( rl2.contains( data.getRoles().get(role) )) {
+				if (cl.contains( child ) || cl.contains( notChild )) 	 
+				    return this;
+				else {
+				    ConceptLabel tl1 = cl.getNewConceptLabel(child, data);
+				    ConceptLabel tl2 = cl.getNewConceptLabel(notChild, data);
+				    Ray r1 = new Ray(rl2.getIdentifier(), coreId, tl1.getIdentifier(), data);
+				    r1 = data.addRay(r1);
+			            Ray r2 = new Ray(rl2.getIdentifier(), coreId, tl2.getIdentifier(), data);
+				    r2 = data.addRay(r2);
+ 			            Startype st1 = replaceRay(ray, r1.getIdentifier(), data); 	
+				    st1 = data.addStartype(st1);
+				    Startype st2 = replaceRay(ray, r2.getIdentifier(), data); 	
+				    st2 = data.addStartype(st2);
+				    st2.setAncestor(st1.getIdentifier());
+				    st1.getProgeny().add(st2.getIdentifier());
+				    st1.setValid(st1.isValid(data));
+				    st2.setValid(st2.isValid(data));
+				    changed = true;
+				    return st1;
+				}
+			}
+		}
+		return this;
+	}
+	
 	/**
 	 * Rule of transitive all.
 	 * 
@@ -549,71 +783,59 @@ public class Startype implements Cloneable {
 		}
 	}
 	*/
-	/**
-	 * Rule called ch.
-	 * 
-	 * @param concept
-	 *            Concept to apply the rule.
-	 * @param id
-	 *            Identifier of the alternative startype to be created in the
-	 *            rule.
-	 */
-	/*
-	public void chRule(Concept concept, ReasonerData data, Frame frame) {
-		Role role = concept.getRole();
-		Concept negation = Concept.negate(concept, data);
-		Startype st2;
-		Ray r1, r2;
-
-		for (Ray ray : rays)
-			if (ray.getRidge().contains(role)
-					&& !ray.getTip().contains(concept)
-					&& !ray.getTip().contains(negation)) {
-				r1 = ray;
-				r2 = ray;
-
-				r1.addNNFToTip(data.getConcepts().values());
-				r2.addNNFToTip(data.getConcepts().values());
-
-				this.rays.remove(ray);
-				st2 = new Startype(this, frame.getLastIDOfStartype());
-				r1.addToTip(concept);
-				r2.addToTip(negation);
-
-				this.addRay(r1);
-				st2.addRay(r2);
-
-				this.progeny.add(st2);
-				st2.ancestor = this;
-				frame.incrementLastIDOfStartype();
+	//"role = R" and "concept = C" in <= N R C  
+	public boolean checkForMaxRays(Integer role, Integer concept, int N, ReasonerData data) {
+		int c = 0;
+	        for (Integer ray : this.getRays().keySet()) {
+		     //System.out.println("some role="+ data.getRoles().get(role).toString());
+		     Integer ridgeId = data.getRays().get(ray).getRidgeId();
+		     Integer tipId = data.getRays().get(ray).getTipId();
+		     if ( data.getCores().get(tipId).contains( concept )  &&  
+			     data.getRidges().get(ridgeId).contains( role )) {	 
+			  c++;
+		          if(c>N) return false;	
 			}
+	        }
+		return true;
 	}
-	*/
-	/**
-	 * Rule of min.
-	 * 
-	 * @param concept
-	 *            Concept to apply the rule.
-	 */
-	/*
-	public void minRule(Concept concept, ReasonerData data) {
-		Role role = concept.getRole();
-		Concept child = concept.getChildren().get(0);
-		Set<Integer> newRays = new HashSet<Integer>();
-		Ray newRay;
 
-		// create the number of rays needed
-		for (int i = 0; i < concept.getCardinality(); i++) {
-			newRay = new Ray(role, child);
-			newRay.addNNFToTip(data.getAxiomNNFs());
-			this.addRay(newRay);
-			newRays.add(newRay.getId());
-		}
-
-		// add the created rays to the array of distinct rays
-		this.distinctRays.add(newRays);
+	public boolean checkForDistinctRays(Integer ray1, Integer ray2, ReasonerData data) {
+	       for(Integer i : data.getMinNames().keySet()){
+		   if(data.getCores().get(this.coreId).contains(i)) {
+		      for(Integer n1 : data.getMinNames().get(i)){
+			  for(Integer n2 : data.getMinNames().get(i)){
+			      if(data.getRays().get(ray1).tipContains(n1,data) && data.getRays().get(ray2).tipContains(n2, data))
+			         return false;
+		          }
+		      }
+		   }
+	       }
+	       return true;
 	}
-	*/
+	//"role = R" and "concept = C" in <= N R C  
+	public Set<Integer> selectTwoRaysForMerge(Integer role, Integer concept, ReasonerData data) {
+		Set<Integer> twoRays = new HashSet<Integer>();
+	        for (Integer ray1 : this.getRays().keySet()) {
+		     Integer ridgeId = data.getRays().get(ray1).getRidgeId();
+		     Integer tipId = data.getRays().get(ray1).getTipId();
+		     if ( data.getCores().get(tipId).contains( concept )  &&  
+			     data.getRidges().get(ridgeId).contains( role )) {
+		        for (Integer ray2 : this.getRays().keySet()) { 
+			     Integer ridgeId2 = data.getRays().get(ray2).getRidgeId();
+		             Integer tipId2 = data.getRays().get(ray2).getTipId();
+		             if ( data.getCores().get(tipId2).contains( concept )  &&  
+			          data.getRidges().get(ridgeId2).contains( role )) {	   
+			          if(checkForDistinctRays(ray1, ray2, data)) {
+			             twoRays.add(ray1);
+			             twoRays.add(ray2);
+			             return twoRays;
+			          }
+			     } 	
+			}
+		     }
+	        }
+		return null;
+	}
 
 	/**
 	 * Rule of max. Create a list of startypes with possible fusions of rays.
@@ -624,83 +846,28 @@ public class Startype implements Cloneable {
 	 *            Identifier for the first startype of the list of startypes
 	 *            with fusioned rays.
 	 */
-	/*
-	public void maxRule(Concept concept, ReasonerData data, Frame frame) {
-		int rayOverflow, i;
-		boolean areDistinctRays;
-		Map<Integer, Ray> matchingRays;
-		Concept child;
-		Ray ray1, ray2, fusionRay;
-		List<Startype> generated;
-
-		i = 0;
-		areDistinctRays = true;
-		child = concept.getChildren().get(0);
-		generated = new ArrayList<Startype>();
-		matchingRays = new HashMap<Integer, Ray>();
-
-		// store the id of all the rays matching the concept
-		for (Ray ray : this.rays)
-			if (ray.getRidge().contains(concept.getRole())
-					&& ray.getTip().contains(child)) {
-				matchingRays.put(i, ray);
-				i++;
-			}
-		rayOverflow = matchingRays.size() - concept.getCardinality();
-
-		// if there are too much rays...
-		if (rayOverflow >= 1) {
-			for (i = 0; i < matchingRays.size() - 1; i++) {
-				for (int k = 1; k < matchingRays.size(); k++) {
-					Startype st = new Startype(this,
-							frame.getLastIDOfStartype());
-
-					// pick the rays two by two
-					ray1 = matchingRays.get(i);
-					ray2 = matchingRays.get(k);
-
-					// the rays must not have both been generated by the same
-					// min
-					// rule
-					for (Set<Integer> set : distinctRays)
-						if (set.contains(ray1.getId())
-								&& set.contains(ray2.getId())) {
-							areDistinctRays = false;
-							break;
-						}
-					if (!areDistinctRays) {
-						areDistinctRays = true;
-						continue;
-					}
-
-					// then we merge the rays, create a new startype, add it to
-					// the list of generated startypes
-					fusionRay = ray1.fusion(ray2);
-					st.rays.add(fusionRay);
-					frame.incrementLastIDOfStartype();
-					st.rays.remove(ray1);
-					st.rays.remove(ray2);
-					generated.add(st);
-				}
-			}
-
-			// set the current startype as the first startype with fusioned rays
-			// of the list
-			this.rays = generated.get(0).rays;
-			generated.remove(0);
-			for (i = 0; i < generated.size(); i++) {
-				// add the progeny to the ancestor
-				progeny.add(generated.get(i));
-				// add the ancestor to the progeny
-				generated.get(i).setAncestor(this);
-			}
-		}
-
-		if (rayOverflow > 1)
-			for (Startype startype : generated)
-				startype.maxRule(concept, data, frame);
+	
+	public Startype maxRule(Integer concept, boolean changed, ReasonerData data) {
+		Integer role = data.getConcepts().get(concept).getRoleId();
+		Integer child = data.getConcepts().get(concept).getChildren().get(0);
+		Integer card = data.getConcepts().get(concept).getCardinality();
+		if(checkForMaxRays(role, child, card, data))
+		   return this;
+		Set<Integer> names = data.getMinNames(concept);
+		Set<Integer> twoRays = selectTwoRaysForMerge(role, child, data);
+		if(twoRays==null) 
+		   return this;
+		Ray merged = data.getRays().get((Integer)twoRays.toArray()[0]).fusion((Integer)twoRays.toArray()[1],data);
+		merged = data.addRay(merged);
+		Startype st = this.replaceRay((Integer)twoRays.toArray()[0], (Integer)twoRays.toArray()[1], merged.getIdentifier(), data);
+		st.setAncestor(this.getIdentifier());
+		this.getProgeny().add(st.getIdentifier());	
+		st = data.addStartype(st);
+		st.setValid(st.isValid(data)); 
+		changed = true;
+		return st;		
 	}
-	*/
+	
 	/**
 	 * Rule about the conceptAssertions.
 	 * 
@@ -773,14 +940,7 @@ public class Startype implements Cloneable {
 		counter++;
 	}
 
-	/**
-	 * Check if the startype is nominal.
-	 * 
-	 * @return true if it is, false otherwise.
-	 */
-	public boolean isNominal() {
-		return isNominal;
-	}
+	 
 
 	/**
 	 * Gives the identifier of the startype paved on the given ray.
@@ -810,9 +970,7 @@ public class Startype implements Cloneable {
 		paved.put(ray.getId(), startype.getIdentifier());
 	}
 	*/
-	public Set<Integer> getProgeny() {
-		return progeny;
-	}
+	 
 
 	public void setAncestor(Integer s) {
 		this.ancestorId = s;
@@ -820,6 +978,14 @@ public class Startype implements Cloneable {
 
 	public Integer getAncestor() {
 		return ancestorId;
+	}
+
+	public void setExpanded(Integer s) {
+		this.expandedId = s;
+	}
+
+	public Integer getExpanded() {
+		return expandedId;
 	}
 
 	@Override
@@ -832,14 +998,22 @@ public class Startype implements Cloneable {
 			return false;
 
 		Startype other = (Startype) obj;
-		if (this.id > 0 && other.id > 0)
-			if (this.id == other.id)
-				return true;
-			else
-				return false;
-		if (id != other.id)
+		if (this.getIdentifier() >= 0 && other.getIdentifier() >= 0) {
+			if (this.getIdentifier() == other.getIdentifier() )
+			   return true;
+			else 
+			   return false;
+		}
+
+		//System.out.println("eq 1=" + this.coreId);
+		//System.out.println("eq 2=" + other.getCoreId() );
+
+		if (! this.coreId.equals(other.getCoreId() )) 
 			return false;
-		return false;
+		//System.out.println("eq OK core");
+		if( ! rays.keySet().equals(other.getRays().keySet()))
+			return false;
+		return true;
 	}
 
 	//@Override
@@ -847,12 +1021,15 @@ public class Startype implements Cloneable {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("Startype " + id + System.getProperty("line.separator"));
+		sb.append("Saturated: " + isSaturated() + System.getProperty("line.separator"));
+		sb.append("Valid: " + isValid() + System.getProperty("line.separator"));
+		sb.append("ExpandedId: " + getExpanded() + System.getProperty("line.separator"));
 		sb.append("Core:" + System.getProperty("line.separator"));
-		sb.append( data.getCores().get( coreId.intValue() ).toString(data) );
+		sb.append( data.getCores().get( coreId ).toString(data) );
 		sb.append(System.getProperty("line.separator"));
 		sb.append("Rays:" + System.getProperty("line.separator"));
 		for (Integer rayId : rays.keySet() ) {
-			sb.append(data.getRays().get( rayId.intValue() ).toString(data) );
+			sb.append(data.getRays().get( rayId ).toString(data) );
 			sb.append(System.getProperty("line.separator"));
 		}
 

@@ -28,7 +28,6 @@ public class TransitiveClosureOfRoleHierarchy {
 	public TransitiveClosureOfRoleHierarchy(Collection<RoleAxiom> axioms,
 			Collection<Role> roles) {
 		List<RoleAxiom> tmp1, tmp2;
-
 		closure = new ArrayList<RoleAxiom>();
 		ontologyRoles = roles;
 		ontologyAxioms = axioms;
@@ -39,6 +38,7 @@ public class TransitiveClosureOfRoleHierarchy {
 
 		closure.addAll(tmp1);
 		closure.addAll(tmp2);
+		
 	}
 
 	/**
@@ -141,21 +141,12 @@ public class TransitiveClosureOfRoleHierarchy {
 	       for(RoleAxiom ax : closure){
 		   Role l = ax.getLeftRole();
 		   Role r = ax.getRightRole();
-		   data.addRole(l);
-	           data.addRole(r);
-		   ax.setLeftId(l.getIdentifier());
-		   ax.setRightId(r.getIdentifier());
+		   l = data.addRole(l);
+	           r = data.addRole(r);
 	       } 
 	}
 
-	public Set<Integer> getSubsumers(Integer role, ReasonerData data) {
-	       Set<Integer> subsumers = new HashSet<Integer>();
-	       for(RoleAxiom ax : this.closure ){
-		   if(ax.getLeftId().equals(role) ) 
-		      subsumers.add(ax.getRightId());
-	       }
-	       return subsumers;
-	}
+	
 	
 	public Collection<RoleAxiom> getClosure() {
 		return closure;

@@ -52,10 +52,11 @@ public class Concept {
 	/** The operator for the concept, if it is not terminal */
 	private Type operator;
 	/** The identifier of the concept, */
-	private int identifier;
+	private int identifier = -1;
 	/** The cardinality of the operator, if it is MIN or MAX */
 	private int cardinality;
 	private Integer roleId;
+	//come from a SOME or MIN
 	private String name;
 
 	/**
@@ -298,23 +299,25 @@ public class Concept {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
+		if (obj == null )
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
 		Concept node = (Concept) obj;
-
+		if (this.getName()==null && node.getName()!=null)
+			return false;
+		if (this.getName()!=null && node.getName()==null)
+			return false;
 		/* both concepts have valid and equals identifiers */
 		if ((this.getIdentifier() >= 0) && (node.getIdentifier() >= 0))
 			if (this.getIdentifier() == node.getIdentifier())
 				return true;
-
 		/* both terminals */
 		if (this.isTerminal && node.isTerminal) {
 			if (this.getName().equals(node.getName()))
 				return true;
-
-			return false;
+			else 
+                            return false;
 		}
 		/* both non terminals */
 		else if (!this.isTerminal && !node.isTerminal) {
@@ -410,17 +413,21 @@ public class Concept {
 			return name;
 		} else {
 			StringBuilder string = new StringBuilder();
-
+			
 			string.append(operator);
 			if (cardinality != -1)
 				string.append(" " + cardinality);
-			if(roleId != null)
-			if (roleId.intValue() >= 0 )
-				string.append(" " + data.getRoles().get(roleId).getName() + " ");
+			if(roleId != null) {
+			   String inv = null;
+			   inv = (data.getRoles().get(roleId).isInverse() ? "inverse" : "");
+			   if (roleId.intValue() >= 0 )
+				string.append(" " + inv +" "+data.getRoles().get(roleId).getName() +" ");
+		        }
 			string.append("(");
+			//System.out.println("Itself = "+ getIdentifier() + "children size = "+ children.size() );
 			for (Integer concept : children) {
 				if (concept != null) {
-					 
+					//System.out.println("Child = "+ data.getConcepts().get(concept).getIdentifier());
 					string.append(data.getConcepts().get(concept).toString(data) + " ");
 				}
 				else

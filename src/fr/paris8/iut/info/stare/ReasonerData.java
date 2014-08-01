@@ -60,6 +60,13 @@ public class ReasonerData {
 	 */
 	private Map<Integer, Set<Startype>> starsByRay;
  
+	// names for SOME  
+        private Map<Integer, Set<Integer>> someNames;
+ 
+	// names for  MIN
+        private Map<Integer, Set<Integer>> minNames;
+	// names added for MIN and SOME
+        private Set<String> terminalConceptNames;
 	/**
 	 * The default constructor.
 	 */
@@ -77,8 +84,88 @@ public class ReasonerData {
 		conceptAssertions = new HashMap<Integer, ConceptAssertion>();
 		axiomNNFs = new HashSet<Integer>();
 		setTransitiveClosureOfRoleHierarchy(new TransitiveClosureOfRoleHierarchy(roleAxioms.values(), roles.values()));
+		someNames = new HashMap<Integer,Set<Integer>>();
+		minNames = new HashMap<Integer,Set<Integer>>();
+		terminalConceptNames = new HashSet<String>();
 	}
 
+	public void setTerminalConceptNames(){
+		for(Concept c : concepts.values() ){
+			if(c.isTerminal())
+			   terminalConceptNames.add(c.getName());
+		}
+	}
+
+	public void setNameForSOMEandMIN(Integer concept){
+		String name = "";
+		Integer roleId = concepts.get(concept).getRoleId();
+		Role role = roles.get(roleId);
+		String roleName = "_"+role.getName();
+		String inv =  (role.isInverse() ? "_INVERSE" : "");
+		String trans =  (role.isTransitiveClosure() ? "_TRANSITIVECLOSURE" : "");
+		Set<Integer> s = new HashSet<Integer>();
+		Concept newConcept=null;
+		switch(concepts.get(concept).getOperator()) {  
+		case  SOME :
+		  name = concept+"_SOME" + inv +  trans + roleName+ "_" +"0";
+		  while(isConceptName(name)) name=name+"0";
+		  newConcept = new Concept(name, -1, false, false);
+		  newConcept = addConcept(newConcept);
+		  s.add(newConcept.getIdentifier());
+		  name = concept+"_SOME" + inv +  trans + roleName+ "_" +"1";
+		  while(isConceptName(name)) name=name+"1";
+		  newConcept = new Concept(name, -1, false, false);
+		  newConcept = addConcept(newConcept);
+		  s.add(newConcept.getIdentifier());
+	          setSomeNames(concept, s);
+		  break;
+		case  MIN: 
+		  int card = concepts.get(concept).getCardinality();
+		  for(int i=0 ; i< card +1 ;i++){
+		     name = concept+"_MIN" + card + inv +  trans + roleName+  "_" +i;
+		     while(isConceptName(name)) name=name+ "0";
+		     newConcept = new Concept(name, -1, false, false);
+		     newConcept = addConcept(newConcept);
+		     s.add(newConcept.getIdentifier());   
+		  } 
+		  setMinNames(concept, s);
+		default:
+                  return;
+		}
+	}  
+
+	public void setSomeNames(Integer concept, Set<Integer> names) {
+	       someNames.put(concept, names);
+	}
+
+	public void setMinNames(Integer concept, Set<Integer> names) {
+	       minNames.put(concept, names);
+	}
+
+	public Set<Integer> getSomeNames(Integer concept) {
+	       if (someNames.containsKey(concept))
+		   return someNames.get(concept);
+	       else {
+		   setNameForSOMEandMIN(concept);
+		   return someNames.get(concept);
+	       }
+	}
+
+	public Set<Integer> getMinNames(Integer concept) {
+	       if (minNames.containsKey(concept))
+		   return minNames.get(concept);
+	       else {
+		   setNameForSOMEandMIN(concept);
+		   return minNames.get(concept);
+	       }
+	}
+
+	public Map<Integer, Set<Integer>> getMinNames(){
+	       return minNames;
+	}
+	public boolean isConceptName(String name){
+		return terminalConceptNames.contains(name);
+	}
 	/**
 	 * Initialization of the map of concepts.
 	 * 
@@ -106,9 +193,9 @@ public class ReasonerData {
 	 *            The role to be tested.
 	 * @return true if the role has a transitive sub-role.
 	 */
-	public boolean Trans(Role role) {
+	public boolean trans(Integer role) {
 		for (RoleAxiom axiom : transitiveClosureOfRoleHierarchy.getClosure() )
-			if (axiom.getRightRole().equals(role))
+			if (axiom.getRightRole().getIdentifier()==role.intValue())
 				if (axiom.getLeftRole().isTransitive())
 					return true;
 		return false;
@@ -213,16 +300,23 @@ public class ReasonerData {
 		//If role is identified
 		if (c.getIdentifier() >= 0)
 			return concepts.get(c.getIdentifier());
-		for (Concept concept : concepts.values())
-			if ( c.equals(concept) )
+		for (Concept concept : concepts.values() ) {
+			if ( c.equals(concept) ) {
+				//System.out.println("get concept ");
+				//System.out.println("get concept ="+concept.getName()+", id="+concept.getIdentifier()  );
 				return concept;
+		        }
+		}
+		//System.out.println("get c ="+c.getName()+", id="+c.getIdentifier()  );
 		return null;
 	}
 
 	public Concept giveConceptIdentifier(Concept c) {
 		Concept concept = this.getConcept(c);
 		if (concept == null) { 
+			//System.out.println("b give c ="+c.getName()+", id="+c.getIdentifier()  );
 			c.setIdentifier(concepts.size());
+			//System.out.println("give c ="+c.getName()+", id="+c.getIdentifier()  );
 			return c;
 		} else {
 			return concept;
@@ -240,9 +334,10 @@ public class ReasonerData {
 	 */
 	public Concept addConcept(Concept concept) {
 		//if (concepts.containsKey( new Integer(concept.getIdentifier())))
-		//	return false;
+		//	return concept;
 		Concept c = this.giveConceptIdentifier(concept);
 		concepts.put(new Integer(c.getIdentifier()), c);
+		//System.out.println("add c ="+c.getName()+", id="+c.getIdentifier() +", ter =" + c.isTerminal());
 		return c;
 	}
 
@@ -280,6 +375,10 @@ public class ReasonerData {
 		return NNFConceptLabel;
 	}
 
+	public Map<Integer, Startype> getStartypes() {
+		return starsByInt;
+	}
+
 	public void setNNFConceptLabel(Integer id) {
 	       NNFConceptLabel = id;
 	}
@@ -308,7 +407,7 @@ public class ReasonerData {
 	 
 	public Role addRole(Role role) {
 		//if (roles.containsKey( new Integer(role.getIdentifier())))
-		//	return false;
+		//	return role;
 		Role r = this.giveRoleIdentifier(role);
 		roles.put(new Integer(r.getIdentifier()), r);
 		return r;
@@ -346,11 +445,12 @@ public class ReasonerData {
 	 */
 	public ConceptLabel giveCoreIdentifier(ConceptLabel core) {
 		ConceptLabel cl = this.getCore(core);
-
 		if (cl == null) {
 			core.setIdentifier(cores.size());
+			//System.out.println("b give = "+ core.getIdentifier());
 			return core;
 		} else {
+			//System.out.println("give = "+ cl.getIdentifier());
 			return cl;
 		}
 	}
@@ -365,7 +465,7 @@ public class ReasonerData {
 	 */
 	public ConceptLabel addCore(ConceptLabel cl) {
 		//if (cores.containsKey(cl.getIdentifier()))
-		//	return false;
+		//	return cl;
 		ConceptLabel core = this.giveCoreIdentifier(cl);
 		cores.put(core.getIdentifier(), core);
 		return core;
@@ -389,7 +489,6 @@ public class ReasonerData {
 			if (rl.equals(roleLabel))
 				return roleLabel;
 		return null;
-
 	}
 
 	/**
@@ -419,7 +518,7 @@ public class ReasonerData {
 	 */
 	public RoleLabel addRidge(RoleLabel rl) {
 		//if (ridges.containsKey(rl.getIdentifier()))
-		//	return false;
+		//	return rl;
 		RoleLabel ray = this.giveRidgeIdentifier(rl);
 		ridges.put(ray.getIdentifier(), ray);
 		return ray;
@@ -435,24 +534,24 @@ public class ReasonerData {
 			if (r.equals(ray))
 				return ray;
 		return null;
-
 	}
 
 	public Ray giveRayIdentifier(Ray r) {
 		Ray ray = this.getRay(r);
 		if (ray == null) {
+			//System.out.println("b give ray id ="+r.getIdentifier()  );
 			r.setIdentifier(rays.size());
+			//System.out.println("give new ray id =" +r.getIdentifier()  );
 			return r;
 		} else {
+			//System.out.println("old ray id =" +ray.getIdentifier()  );
 			return ray;
 		}
 	}
 
-	 
-	 
 	public Ray addRay(Ray ray) {
 		//if (rays.containsKey(ray.getIdentifier()))
-		//	return false;
+		//	return ray;
 		Ray r = this.giveRayIdentifier(ray);
 		rays.put(r.getIdentifier(), r);
 		return r;
@@ -464,7 +563,7 @@ public class ReasonerData {
 			return starsByInt.get(st.getIdentifier());
 		//"equals" manipulates two sets of 3n-tuples of Integer 
 		//where n is the number of rays 
-		for (Startype s : starsByInt.values())
+		for (Startype s : starsByInt.values() )
 			if (st.equals(s))
 				return s;
 		return null;
@@ -474,7 +573,6 @@ public class ReasonerData {
 	 
 	public Startype giveStartypeIdentifier(Startype st) {
 		Startype s = getStartype(st);
-
 		if (s == null) {
 			st.setIdentifier(starsByInt.size());
 			return st;
@@ -486,21 +584,51 @@ public class ReasonerData {
 	 
 	public Startype addStartype(Startype st) {
 		//if (starsByInt.containsKey(st.getIdentifier()))
-		//	return false;
+		//	return st;
 		Startype s = this.giveStartypeIdentifier(st);
-		starsByInt.put(st.getIdentifier(), st);
+		starsByInt.put(s.getIdentifier(), s);
 
-		for (Integer r : st.getRays().keySet() ) {    
+		for (Integer r : s.getRays().keySet() ) {    
 	             if( starsByRay.containsKey(r) )
- 		         starsByRay.get(r).add(st);
+ 		         starsByRay.get(r).add(s);
 		     else {
 			 Set ss = new HashSet<Startype>();
-			 ss.add(st); 
+			 ss.add(s); 
 			 starsByRay.put(r, ss);
 		     }
 		}
 		return s;
 	}
+
+	//It returns a startype that is not expanded (isExpanded==null) and not saturated (isSaturated==true)
+	public Integer getStartypeToExpand() {
+		for(Integer i : starsByInt.keySet())
+		    if(! starsByInt.get(i).isSaturated() && starsByInt.get(i).getExpanded()==null)
+		      return i; 
+		return null;
+	}
+
+	public Set<Integer> getSubsumers(Integer role) {
+	       Set<Integer> subsumers = new HashSet<Integer>();
+		//System.out.println("subsum role ="+ data.getRoles().get(role));
+	       for(RoleAxiom ax : transitiveClosureOfRoleHierarchy.getClosure() ){
+		   //System.out.println("role left ="+ data.getRoles().get(ax.getLeftRole().getIdentifier()));
+		   //System.out.println("role right ="+ data.getRoles().get(ax.getRightRole().getIdentifier()));	
+		   if(ax.getLeftRole().getIdentifier() == role.intValue()  ) 
+		      subsumers.add(ax.getRightRole().getIdentifier() );
+	       }
+	       return subsumers;
+	}
+
+	public Set<Integer> getRolesForTransRule(Integer role){
+		Set<Integer> roles = new HashSet<Integer>();
+		for(RoleAxiom axiom : transitiveClosureOfRoleHierarchy.getClosure()){
+		    if (axiom.getRightRole().getIdentifier() == role.intValue() )
+				if ( trans( new Integer(axiom.getLeftRole().getIdentifier()) ) )
+				      roles.add( axiom.getLeftRole().getIdentifier() );
+		}
+		return roles;
+	} 
 
 	/**
 	 * Gives the inverse of a role, if it exists in the list.
@@ -519,7 +647,7 @@ public class ReasonerData {
 		        rInverse = data.giveRoleIdentifier(rInverse);
 		        rInverse.setInverse(true);
 		}
-		data.addRole(rInverse);
+		rInverse = data.addRole(rInverse);
 		return rInverse;
 	}
 
@@ -575,7 +703,7 @@ public class ReasonerData {
 		for (RoleAxiom axiom : this.getTransitiveClosureOfRoleHierarchy()
 				.getTransitiveClosureOfRoleHierarchy())
 			if (axiom.getRightRole().equals(role))
-				if (this.Trans(axiom.getLeftRole()))
+				if (this.trans(axiom.getLeftRole().getIdentifier() ))
 					return false;
 		return true;
 	}

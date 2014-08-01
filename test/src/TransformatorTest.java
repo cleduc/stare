@@ -77,9 +77,9 @@ public class TransformatorTest {
    System.out.println("Obtained Concept : " + c1.toString(data) +", id="+c2.getIdentifier() );
 
    if( c1.equals(c2) )
-       System.out.println("Result  :" + c1.toString(data) + "=" + c2.toString());
+       System.out.println("Result  :" + c1.toString(data) + "=" + c2.toString(data));
    else 
-       System.out.println("Result : " + c1.toString(data) + "<>" + c2.toString());
+       System.out.println("Result : " + c1.toString(data) + "<>" + c2.toString(data));
 
    line  = "(A OR B)";
    System.out.println("Tested Concept : " + line); 
@@ -114,9 +114,9 @@ public class TransformatorTest {
    System.out.println("Obtained Concept : " + c2.toString(data) +", id="+c2.getIdentifier() );
 
    if( c1.equals(c2) )
-       System.out.println("Result :" + c1.toString(data) + "=" + c2.toString());
+       System.out.println("Result :" + c1.toString(data) + "=" + c2.toString(data));
    else 
-       System.out.println("Result : " + c1.toString(data) + "<>" + c2.toString());
+       System.out.println("Result : " + c1.toString(data) + "<>" + c2.toString(data));
 
    line  = "(SOME R (((NOT B) OR B) AND (MIN 2 R (((NOT B) OR B) AND A))))";
    System.out.println("Tested Concept : " + line); 

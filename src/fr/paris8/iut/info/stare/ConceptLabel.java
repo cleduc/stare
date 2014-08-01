@@ -29,39 +29,52 @@ import java.util.Set;
 // a set of concepts
 //public class ConceptLabel extends HashSet<Concept> {
 
-public class ConceptLabel extends HashSet<Integer> {
+public class ConceptLabel  {
 	private static final long serialVersionUID = 1L;
 	private int identifier = -1;
+	private Set<Integer> conceptIds;
 
 	public ConceptLabel() {
-		super();
+		conceptIds = new HashSet<Integer>();
+	}
+
+	public ConceptLabel(Set<Integer> s) {
+		conceptIds = new HashSet<Integer>(s);
 	}
 
 	//create a ConceptLabel from a single concept that must be identified 
-	public ConceptLabel(Concept c, ReasonerData data) {
-		super();
-		this.add(c.getIdentifier());
-		//if "this" is not identified, it is now
-		data.addCore(this);
+	public ConceptLabel(Concept c) {
+		conceptIds = new HashSet<Integer>(c.getIdentifier());
+		conceptIds.add(c.getIdentifier());
 	}
 	
 	//If concept is already identifed
-	public ConceptLabel(Integer id, ReasonerData data) {
-		super();
-		this.add(id);
-		//if "this" is not identified, it is now
-		data.addCore(this);
+	public ConceptLabel(Integer id) {
+		conceptIds = new HashSet<Integer>();
+		conceptIds.add(id);
+	}
+
+	public void add(Concept c) {
+		conceptIds.add(c.getIdentifier());
+	}
+
+	public void add(Integer id) {
+		conceptIds.add(id);
+	}
+
+	public void addAll(Set<Integer> ids) {
+		conceptIds.addAll(ids);
 	}
 
 	//If "c" is not in "this", a new Conceptlabel is created 
 	public  ConceptLabel getNewConceptLabel(Integer c, ReasonerData data) {
 		if( ! this.contains(c) ) {
 		    ConceptLabel cl = new ConceptLabel();
-		    for(Integer concept : this){ 
+		    for(Integer concept : conceptIds){ 
 		        cl.add(concept);
                     }
 		    cl.add( c );
-		    data.addCore(cl);
+		    cl = data.addCore(cl);
 		    return cl;
                 } else
 		  return this;
@@ -69,18 +82,19 @@ public class ConceptLabel extends HashSet<Integer> {
 
 	 
 	public  ConceptLabel getNewConceptLabel(Set<Integer> lc, ReasonerData data) {
-		ConceptLabel cl = new ConceptLabel();
-		for(Integer concept : this){ 
-		        cl.add(concept);
-                }
+		ConceptLabel cl = new ConceptLabel(this.conceptIds);
 		cl.addAll(lc);
-		data.addCore(cl);
+		cl = data.addCore(cl);
 		return cl;
  	}
 
 
 	public  boolean contains(Concept concept) {
-		return this.contains(concept.getIdentifier());
+		return this.conceptIds.contains(concept.getIdentifier());
+	}
+
+	public  boolean contains(Integer concept) {
+		return this.conceptIds.contains(concept);
 	}
 
 	public void setIdentifier(int id) {
@@ -91,30 +105,29 @@ public class ConceptLabel extends HashSet<Integer> {
 		return this.identifier;
 	}
 
+	public void setConceptIds(Set<Integer> s) {
+		this.conceptIds = s;
+	}
+
+	public Set<Integer> getConceptIds() {
+		return this.conceptIds;
+	}
 	@Override
 	public boolean equals(Object obj) {
-		if (!super.equals(obj))
-			return false;
-		//If adresses are the same
 		if (this == obj)
 			return true;
 		if (obj == null )
 			return false;
-
 		if (getClass() != obj.getClass())
 			return false;
-		 
 		ConceptLabel other = (ConceptLabel) obj;
-		if (this.getIdentifier() > 0 && other.getIdentifier() > 0)
+		if (this.getIdentifier() >= 0 && other.getIdentifier() >= 0)
 			if (this.getIdentifier() == other.getIdentifier())
 				return true;
 			else
 				return false;
-
-		//Check if two sets of identifiers equal. This is performed between two sets of Integers 
-		if( super.equals( other.getClass().getSuperclass() ) ) 
+		if( conceptIds.equals(other.getConceptIds() )  ) 
 		     return true;
- 
 		return false;
 	}
 
@@ -122,8 +135,8 @@ public class ConceptLabel extends HashSet<Integer> {
 	public String toString(ReasonerData data) {
 		StringBuilder sb = new StringBuilder();
 		
-		for (Integer i : this) {
-			sb.append(data.getConcepts().get( i.intValue() ).toString());
+		for (Integer i : conceptIds) {
+			sb.append(data.getConcepts().get( i ).toString(data));
 			sb.append(System.getProperty("line.separator"));
 		}
 
