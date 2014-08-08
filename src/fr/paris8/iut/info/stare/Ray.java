@@ -31,6 +31,8 @@ public class Ray {
 	private Integer ridgeId;
 	private Integer coreId;
 	private Integer tipId;
+	//private Set<Integer> processedConcepts;
+	//private Set<Integer> freshConcepts;
 	//Used for startype
 	private int counter = 0;
 	public Ray() {
@@ -44,6 +46,7 @@ public class Ray {
 		this.ridgeId = new Integer(rl.getIdentifier());
 		this.coreId = new Integer(cl.getIdentifier());
 		this.tipId  = new Integer(tl.getIdentifier());
+		 
 	}
 
 	//Create a ray when we have only a simple role for ridge and a simple concept for tip 
@@ -55,6 +58,7 @@ public class Ray {
 		this.ridgeId = new Integer(rl.getIdentifier());
 		this.coreId = new Integer(cl.getIdentifier());
 		this.tipId  = new Integer(conceptl.getIdentifier());
+		 
 	}
 
 	//Create a ray when we know ids
@@ -62,16 +66,22 @@ public class Ray {
 		this.ridgeId = new Integer(rl);
 		this.coreId = new Integer(cl);
 		this.tipId = new Integer(tl);
+		 
 	}
-	/*
-	public boolean matches(Role role, Concept c, Concept cr) {
-		if (this.rl.contains(role))
-			if (this.cl.contains(c))
-			    if(this.crl.contains(cr))
-				return true;
-		return false;
+/*
+	public Set<Integer> getFresh(){
+	       return freshConcepts;
 	}
-	*/
+	public void setFresh(Set<Integer> f){
+	       freshConcepts = f;
+	}
+	public Set<Integer> getProcessed(){
+	       return processedConcepts;
+	}
+	public void setProcessed(Set<Integer> p){
+	       processedConcepts = p;
+	}
+*/
 	//return a new ray if r is not contained in ridge 
 	public Ray getNewRayByRole(Integer r, ReasonerData data) {
 	       if( ! data.getRidges().containsKey(r) ) {
@@ -93,9 +103,9 @@ public class Ray {
 
 	//return a new ray if c is not contained in core 
 	public Ray getNewRayByCore(Integer c, ReasonerData data) {
-	       if( ! data.getCores().containsKey(c)  ) {
+	       if( ! data.getCores().get(this.getCoreId()).contains(c)  ) {
 		    ConceptLabel cl =  data.getCores().get(this.getCoreId()).getNewConceptLabel(c, data);
-                    Ray ray = new Ray(data.getRidges().get(this.getRidgeId()), cl, data.getCores().get(this.getTipId()), data);
+                    Ray ray = new Ray(this.getRidgeId(), cl.getIdentifier(), this.getTipId(), data);
 		    ray = data.addRay(ray);
 		    return ray;
                 } else
@@ -114,7 +124,7 @@ public class Ray {
 	public Ray getNewRayByTip(Integer c, ReasonerData data) {
 	       if( ! data.getCores().containsKey(c)   ) {
 		    ConceptLabel cl =  data.getCores().get(this.getTipId()).getNewConceptLabel(c, data);
-                    Ray ray = new Ray(data.getRidges().get(this.getRidgeId()), data.getCores().get(this.getCoreId()), cl, data);
+                    Ray ray = new Ray(this.getRidgeId(), this.getCoreId(), cl.getIdentifier(), data);
 		    ray = data.addRay(ray);
 		    return ray;
                 } else
@@ -124,7 +134,7 @@ public class Ray {
 	public Ray getNewRayByTip(Set<Integer> conceptList, ReasonerData data) {
 	       ConceptLabel cl = data.getCores().get(this.getTipId());
 	       cl = cl.getNewConceptLabel(conceptList, data);
-	       Ray ray = new Ray(ridgeId, coreId, new Integer(cl.getIdentifier()), data );
+	       Ray ray = new Ray(ridgeId, coreId, cl.getIdentifier(), data );
 	       ray = data.addRay(ray); 
 	       return ray;
 	}
@@ -176,29 +186,22 @@ public class Ray {
 	}
 
 	public Ray fusion(Integer ray2, ReasonerData data) {
-		Ray rl= null;
-		for(Integer i : data.getRidges().get(ray2).getRoleIds() ){
-		    rl = getNewRayByRole(i, data);
-		}
-		for(Integer i : data.getCores().get(ray2).getConceptIds() ){
-		    rl = getNewRayByCore(i, data);
-		}
-		for(Integer i : data.getCores().get(ray2).getConceptIds() ){
-		    rl = getNewRayByTip(i, data);
-		}
+		Ray rl= new Ray();
+		Integer ridgeId = data.getRays().get(ray2).getRidgeId();
+		Integer coreId = data.getRays().get(ray2).getCoreId();
+		Integer tipId = data.getRays().get(ray2).getTipId();
+		rl = this.getNewRayByRole(data.getRidges().get(ridgeId).getRoleIds() , data);
+	        rl = this.getNewRayByCore(data.getCores().get(coreId).getConceptIds(), data);
+		rl = this.getNewRayByTip(data.getCores().get(tipId).getConceptIds(), data);
 		return rl;
 	}
 	 
-	public boolean isInverseOf(Ray ray, ReasonerData data) {
-		 //if "ray" is not identified, it is now
-		data.addRay(ray);
-		if ( ! this.coreId.equals( ray.getTipId()) )
+	public boolean isInverseOf(Integer ray, ReasonerData data) {
+		if ( ! this.coreId.equals( data.getRays().get(ray).getTipId()) )
 			return false;
-
-		if ( ! this.tipId.equals( ray.getCoreId()) )
+		if ( ! this.tipId.equals( data.getRays().get(ray).getCoreId()) )
 			return false;
-
-		if ( ! data.getRidges().get(ridgeId).isInverseOf(data.getRidges().get(ray.getIdentifier()), data)  )
+		if ( ! data.getRidges().get(this.ridgeId).isInverseOf( data.getRidges().get(data.getRays().get(ray).getRidgeId()), data)  )
 			return false;
 		else
 			return true;
@@ -219,11 +222,11 @@ public class Ray {
 			else 
 			   return false;
 		}
-		if ( ! this.coreId.equals(other.getCoreId()) )
-			return false;
 		//System.out.println("ridge other ="+other.getRidgeId());
 		//System.out.println("ridge this ="+this.getRidgeId());
 		//System.out.println("ridge= "+data.getRidges().get(this.ridgeId));
+		if ( ! this.coreId.equals(other.getCoreId()) )
+			return false;		
 		if ( ! this.ridgeId.equals(other.getRidgeId()) )
 			return false;
 		if ( ! this.tipId.equals(other.getTipId() ) )
@@ -236,7 +239,7 @@ public class Ray {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("Ray " + id + System.getProperty("line.separator"));
-		sb.append("Core " +  System.getProperty("line.separator"));
+		sb.append("Core " + coreId + System.getProperty("line.separator"));
 		sb.append( data.getCores().get( coreId).toString(data) );
 		sb.append("Ridge:" + System.getProperty("line.separator"));
 		sb.append( data.getRidges().get( ridgeId ).toString(data) );
