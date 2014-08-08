@@ -25,16 +25,29 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.lang.CloneNotSupportedException;
 
 public class Frame {
 	// identity
 	private int id;
-	private int lastIdOfStartype;
+	//private Map<Integer, Startype> frame = new HashMap<Integer, Startype>(); 
 	private int numberOfNominals;
-	private Set<Startype> stars = new HashSet<Startype>();
+	//a set of rays to match for a startype
+	private Map<Integer, Set<Integer>> startypesToMatch;
+	private Set<Integer> startypesToSaturate;
+	private Map<Integer, Startype> stars;
 	//for debug
+	private int coreRuleApplications=0;
+	private int coreCheckApplications=0;
+	private int tipRuleApplications=0;
+	private int tipCheckApplications=0;
 	private int ruleApplications=0;
+	private int checkApplications=0;
+	private int clash=0;
+	private int newSomes=0;
+	private int newMin=0;
 	/**
 	 * Creation wof the frame.
 	 * 
@@ -43,284 +56,435 @@ public class Frame {
 	 */
 	public Frame(int id) {
 		this.id = id;
-		this.lastIdOfStartype = 0;
-		stars = new HashSet<Startype>();
+		//this.lastIdOfStartype = 0;
+		//stars = new HashSet<Startype>();
+		startypesToSaturate = new HashSet<Integer>();
+		startypesToMatch = new HashMap<Integer, Set<Integer>>();
+		stars = new HashMap<Integer, Startype>();
+	}
+	 
+	public int getCoreRuleApplications(){
+		return coreRuleApplications;
 	}
 
-	/**
-	 * Creates the startypes and paves them
-	 * 
-	 * @param data
-	 *            The data already gathered by the reasoner.
-	 */
-	/*
-	public void pave(ReasonerData data) {
-		this.initNominals(data);
-		numberOfNominals = stars.size();
-		this.paving(data, new ArrayList<Startype>(stars));
+	public int getCoreCheckApplications(){
+		return coreCheckApplications;
 	}
-	*/
-	/**
-	 * Recursive function to pave the startypes of a list.
-	 * 
-	 * @param data
-	 *            The data already gathered by the reasoner.
-	 * @param list
-	 *            The list of startypes to be paved.
-	 */
-	/*
-	private void paving(ReasonerData data, List<Startype> list) {
-		List<Startype> createdStartypes = new ArrayList<Startype>();
-		boolean paved = false;
 
-		// initialization
-		this.initNominals(data);
-
-		// pave each startype
-		for (Startype startype : list) {
-			// for each ray
-			for (Ray ray : startype.getRays()) {
-
-				// if the ray has not been paved yet...
-				if (ray.getCounter() == 0) {
-					// ...check in each startype...
-					for (Startype s : stars) {
-
-						// must not pave the startypes reflexively
-						if (startype.getIdentifier() != s.getIdentifier()) {
-							// ...for each ray...
-							for (Ray r : s.getRays()) {
-								// ...if the second ray is an inverse of the
-								// first:
-								if (ray.isInverseOf(r, startype.getCore(),
-										s.getCore(), data)) {
-									// signal both startype they have been paved
-									// on
-									// the
-									// ray
-									startype.addPavedStartypeToRay(ray, s);
-									s.addPavedStartypeToRay(r, startype);
-
-									// increment the counters
-									ray.incrementCounter();
-									r.incrementCounter();
-									s.incrementCounter();
-
-									// signal the startype has been paved
-									paved = true;
-								}
-							}
-						}
-					}
-
-					// if the current startype cannot be paved...
-					if (!paved) {
-						// ...create a new startype, with the standard
-						// concepts...
-						Startype s = init(data, ray.getTip());
-						// ...and one ray that is the inverse of the one checked
-						Ray r = new Ray(ray.getRidge().getInverseOf(data),
-								startype.getCore());
-
-						s.addRay(r);
-						// signal both startype they have been paved on the
-						// ray
-						startype.addPavedStartypeToRay(ray, s);
-						s.addPavedStartypeToRay(r, startype);
-
-						// increment the counters
-						ray.incrementCounter();
-						r.incrementCounter();
-						s.incrementCounter();
-
-						// add the startype to the list of newly created
-						// startypes
-						createdStartypes.add(s);
-					}
-				}
-			}
-		}
-
-		if (!createdStartypes.isEmpty()) {
-			// add all the newly created startypes to the frame, then loop to
-			// pave them
-			stars.addAll(createdStartypes);
-			this.paving(data, createdStartypes);
-		}
+	public int getTipRuleApplications(){
+		return tipRuleApplications;
 	}
-	*/
 
-	/**
-	 * Initialization of a standard startype, with only the concepts of the
-	 * ontology in the core (rules have not been applied). WARNING: the
-	 * generated startype truly contains the NNF, they are notstored somewhere
-	 * else like for the other initializers. For this reason, this startype has
-	 * no identifier and is not stored in the frame.
-	 * 
-	 * @param data
-	 *            The data of the ontology.
-	 * @return The startype initialized.
-	 */
-	public int getRuleApplications(){
-		return ruleApplications;
+	public int getTipCheckApplications(){
+		return tipCheckApplications;
 	}
+
+	 
 	public Startype init(ReasonerData data)   {
 		Startype st = new Startype( data.getNNFConceptLabel() );
 		st = data.addStartype(st);
+		//stars.put(st.getIdentifier(), st);
+		//frame.put(st.getIdentifier(), st);
+		//st = applyRules(st, data);
 		return st;
 	}
-
-	public void applyNonGeneratingRules(ReasonerData data)   {
-		Integer notSaturated = null;
-		while((notSaturated = data.getStartypeToExpand()) != null ) {
-		      Startype st = data.getStartypes().get(notSaturated);
-		      Startype sat = st;
+	//It applies rules to saturate each startype of the frame
+	//A saturated startype may become unsaturated by expanding  
+	public void applyRulesToFrame(ReasonerData data) {
+		Startype sat = null;
+		while( startypesToSaturate.size() > 0 ) {
+		      Startype st = data.getStartypes().get(startypesToSaturate.toArray()[0]);
 		      Set<Integer> concepts = new HashSet<Integer>(data.getCores().get(st.getCoreId()).getConceptIds());
 		      boolean saturated = false;
                       while(! saturated ) {
-		      //for terminates when a new startype is created, or no new startype is created  for all concepts visited 
+		      //"for" terminates when a new startype is created, or no new startype is created  for all concepts in the core visited 
 		      for(Integer concept :  concepts) {
-			   boolean changed = false; // not used yet
+			  Set<Integer> changedRays = null;
+			  Integer changedCore;
+			  boolean changed = false;
 			  if (! data.getConcepts().get(concept).isTerminal() ) {
 			  switch (data.getConcepts().get(concept).getOperator()) {
 			  case INTERSECTION:
-				System.out.println("Rule INTER for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
-				sat = st.intersectionRule(concept, changed, data);
+				sat = st.intersectionRule(concept,  changed, startypesToMatch, data);
 				break;
 			  case UNION:
-				System.out.println("Rule UNION for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
-				sat = st.unionRule(concept, changed, data);
-				break;
-			  case ALL:
-				System.out.println("Rule ALL for startype "+  getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data) );
-				sat = st.allRule(concept, changed, data);
-				sat = st.transRule(concept, changed, data);
-				break;
-			 case  MAX: //CHOICE
-				System.out.println("Rule CHOICE for startype "+  getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data) );
-				sat = st.choiceRule(concept, changed, data);
-				break;
-			  default:
-				break;
-			  }
-		          }
-			  if(! st.equals(sat)) {
-		             st.setExpanded(sat.getIdentifier());
-			     st = sat;
-			     concepts = new HashSet<Integer>(data.getCores().get(st.getCoreId()).getConceptIds());
-			     saturated = false;	
-			     break;	
-			  } else
-                             saturated = true;
-		     }//for
-	           }
-		}
-	}
-
-	public void applyRules(ReasonerData data) {
-		Integer notSaturated = null;
-		while((notSaturated = data.getStartypeToExpand()) != null ) {
-		      Startype st = data.getStartypes().get(notSaturated);
-		      Startype sat = st;
-		      Set<Integer> concepts = new HashSet<Integer>(data.getCores().get(st.getCoreId()).getConceptIds());
-		      boolean saturated = false;
-                      while(! saturated ) {
-		      //for terminates when a new startype is created, or no new startype is created  for all concepts visited 
-		      for(Integer concept :  concepts) {
-			  boolean changed = false;// not used yet
-			  if (! data.getConcepts().get(concept).isTerminal() ) {
-			  switch (data.getConcepts().get(concept).getOperator()) {
-			  case INTERSECTION:
-				System.out.println("Rule INTER for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
-				sat = st.intersectionRule(concept, changed, data);
-				break;
-			  case UNION:
-				System.out.println("Rule UNION for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
-				sat = st.unionRule(concept, changed, data);
+				sat = st.unionRule(concept, changed, startypesToMatch, data);
 				break;
 			  case SOME:
-				System.out.println("Rule SOME for startype "+ getIdentifier() + " on "+  data.getConcepts().get(concept).toString(data) );
-				sat = st.someRule(concept, changed, data);
+				sat = st.someRule(concept, changed, startypesToMatch, data);
 				break;
 			  case ALL:
-				System.out.println("Rule ALL and TRANSRULE for startype "+  getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data) );
-				sat = st.allRule(concept, changed, data);
-				sat = st.transRule(concept, changed, data);
+				sat = st.allRule(concept, changed,  startypesToMatch, data);
+				sat = st.transRule(concept, changed,  startypesToMatch, data);
 				break;
 			  case MIN:
-				System.out.println("Rule MIN for startype "+ getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data)  );
-				sat = st.minRule(concept, changed, data);
+				sat = st.minRule(concept, changed,  startypesToMatch, data);
 				break;
- 
-			case MAX:
-				System.out.println("Rule MAX and CH for startype "+ getIdentifier() + " on "+ data.getConcepts().get(concept).toString(data) );
-				sat = st.maxRule(concept, changed, data);
-				sat = st.choiceRule(concept, changed, data);
+			  case MAX:
+				sat = st.maxRule(concept, changed,  startypesToMatch, data);
+				sat = st.choiceRule(concept, changed,  startypesToMatch,data);
 				break;
 			  default:
 				break;
 			  }
 		          }
-
 			  if(! st.equals(sat)) {
-		             st.setExpanded(sat.getIdentifier());
+			     //remove "st" that was expanded : rethink
+		             data.getStartypes().remove(st.getIdentifier());
 			     st = sat;
 			     concepts = new HashSet<Integer>(data.getCores().get(st.getCoreId()).getConceptIds());
 			     saturated = false;	
 			     ruleApplications++;
 			     break;	
-			  } else
+			  } else {
 			     //"saturated = true" only if "saturated = true" for each iteration of for 
                              saturated = true;
+			  }
 		     }//for
-	           }
+	           }//while(! saturated ) {
 		   sat.setSaturated(true);
-		}
+		}//while( startypesToExpand.size() > 0 ) 
+	}
+	 
+	//It returns (startype, ray2) where "startype" contains "ray2" which can connect to "ray"
+	public Map<Integer, Integer> getMatch(Integer ray, ReasonerData data) {
+	       for(Integer st : data.getStartypes().keySet()){
+		   for(Integer r : data.getStartypes().get(st).getRays().keySet()){
+		       if(data.getRays().get(r).isInverseOf(ray, data)) {
+			  Map<Integer, Integer> str = new HashMap();
+		          str.put(st, r);
+                          return str;
+		       }
+		   }
+	       }
+	       return null;
+	}
+	// toPave=(startype, ray)
+	// It matches "toMatch" to "matchable" 
+	public void matching(Map<Integer,Integer> toMatch, Map<Integer,Integer> matchable, ReasonerData data) {
+		  Integer st1 = (Integer)toMatch.keySet().toArray()[0];
+		  Integer st2 = (Integer)matchable.keySet().toArray()[0];
+		  Integer ray1 = toMatch.get(st1);
+		  Integer ray2 = matchable.get(st2);
+		  int nb1 = ((Integer)data.getStartypes().get(st1).getRays().get(ray1)).intValue();
+		  int nb2 = ((Integer)data.getStartypes().get(st2).getRays().get(ray2)).intValue();
+		  data.getStartypes().get(st1).getRays().put(ray1, new Integer(nb1+1));
+		  Map<Integer,Integer> matcheds = data.getStartypes().get(st1).getStartypesMatched().get(ray1);
+		  //add pair (startype,ray)
+		  matcheds.put(st2, ray2);  
+		  data.getStartypes().get(st1).getStartypesMatched().put(ray1, matcheds);
+		  data.getStartypes().get(st2).getRays().put(ray2, new Integer(nb2+1));
+		  matcheds = data.getStartypes().get(st2).getStartypesMatched().get(ray2);
+		  //add pair (startype,ray)
+		  matcheds.put(st1,ray1); 
+		  data.getStartypes().get(st2).getStartypesMatched().put(ray2, matcheds);
+	}
+
+	/**
+	 * Paving a frame from created startypes and generating new ones
+	 * Nominals are not taken into account
+	 */
+
+	//The method starts with a startype that is not matched.
+	//That startype will match another one via each ray
+	//Saturation by rules makes startypes saturated and propagates changes  
+	//It returns "true" if every startype matched another one and is saturated
+	//It returns "false" when every startype is saturated but there is a startype that cannot match any startype 
+	public boolean buildFrame(ReasonerData data) {
+	       boolean matched = false;
+	       Set<Integer> matchedRays = new HashSet<Integer>();
+	       while ( ! startypesToMatch.isEmpty() ) {
+		 Integer sId = (Integer)startypesToMatch.keySet().toArray()[0];
+		 Integer rId = (Integer)startypesToMatch.get(sId).toArray()[0];
+		 Map<Integer, Integer> toMatch = new HashMap<Integer, Integer>();
+		 toMatch.put(sId, rId);
+		 Map<Integer, Integer> matchable = getMatch(rId, data);
+		 //If the method has already tried to match the ray in "toMatch" but is is always not matched
+		 //then this frame is not a model
+		 if(matchable == null && matchedRays.contains(rId)) 
+                    return false;
+                 matchedRays.add(rId);
+		 if(matchable!=null) 
+			matching(toMatch, matchable, data);
+		 else {
+                    	//create a new startype corresponding to the ray "r" in "toPave=(s,r)" 
+		    	Integer stId =  (Integer)toMatch.keySet().toArray()[0];
+		    	Integer rayId =  toMatch.get(stId);
+		    	Startype st = new Startype( data.getRays().get(rayId).getTipId() );
+		    	RoleLabel rl = data.getRidges().get(data.getRays().get(rayId).getRidgeId());
+	            	RoleLabel inv = rl.getInverseOf(data);
+		    	Ray ray = new Ray(inv.getIdentifier(),  data.getRays().get(rayId).getTipId(), data.getRays().get(rayId).getCoreId(), data);
+		    	ray = data.addRay(ray);
+		    	st = st.addRay(ray.getIdentifier(), null, data);
+		    	st = data.addStartype(st);
+		    	startypesToSaturate.add(st.getIdentifier());
+		    	applyRulesToFrame(data);
+		 }
+	      }
+	      return true;
+	}
+
+	public boolean buildDeterministicFrame(ReasonerData data) {
+	       boolean matched = false;
+	       Set<Integer> matchedRays = new HashSet<Integer>();
+	       while ( ! startypesToMatch.isEmpty() ) {
+		 Integer sId = (Integer)startypesToMatch.keySet().toArray()[0];
+		 Integer rId = (Integer)startypesToMatch.get(sId).toArray()[0];
+		 Map<Integer, Integer> toMatch = new HashMap<Integer, Integer>();
+		 toMatch.put(sId, rId);
+		 Map<Integer, Integer> matchable = getMatch(rId, data);
+		 //If the method has already tried to match the ray in "toMatch" but is is always not matched
+		 //then this frame is not a model
+		 if(matchable == null && matchedRays.contains(rId)) 
+                    return false;
+                 matchedRays.add(rId);
+		 if(matchable!=null) 
+			matching(toMatch, matchable, data);
+		 else {
+                    	//create a new startype corresponding to the ray "r" in "toPave=(s,r)" 
+		    	Integer stId =  (Integer)toMatch.keySet().toArray()[0];
+		    	Integer rayId =  toMatch.get(stId);
+		    	Startype st = new Startype( data.getRays().get(rayId).getTipId() );
+		    	RoleLabel rl = data.getRidges().get(data.getRays().get(rayId).getRidgeId());
+	            	RoleLabel inv = rl.getInverseOf(data);
+		    	Ray ray = new Ray(inv.getIdentifier(),  data.getRays().get(rayId).getTipId(), data.getRays().get(rayId).getCoreId(), data);
+		    	ray = data.addRay(ray);
+		    	st = st.addRay(ray.getIdentifier(), null, data);
+		    	st = data.addStartype(st);
+		    	startypesToSaturate.add(st.getIdentifier());
+		    	applyRulesToFrame(data);
+		 }
+	      }
+	      return true;
+	}
+
+	//This method visits each ray of "st" and applies rules to its tip. 
+	public Startype applyRulesToTips(Startype st,  StartypeEvolution ste, ReasonerData data) {
+		   Startype sat = st;
+		   boolean changed = false;
+	           for(Integer  ray : ste.getIdEvolution().keySet() ) {	
+		     //System.out.println("Tip Rays dealt initId= " + ray );
+		     //System.out.println("Tip Rays dealt currId= " + ste.getIdEvolution().get(ray) );
+		     //System.out.println("Tip ste init= " + ste.getIdEvolution().keySet().toString() );
+		     //System.out.println("Tip ste values= " + ste.getIdEvolution().values().toString() );
+	 	  
+		     Set<Integer> concepts = new HashSet<Integer>( ste.getFreshConceptsForRay().get(ray) );
+                     while(! concepts.isEmpty() ) {
+			  //System.out.println("Tip Non changed Applications= " + tipCheckApplications );
+			  //System.out.println("Tip Changed Applications= " + tipRuleApplications );
+		          //System.out.println(" nRay size= "+nRay.size()+", RayId=" +(Integer)nRay.toArray()[0] );
+	                  //System.out.println(" Ray ="+ data.getRays().get( (Integer)nRay.toArray()[0] ).getIdentifier() );
+			  //System.out.println("Concepts dealt = "+ concepts.toString() );	
+
+			  //System.out.println("Rays = "+st.getRays().keySet());
+		          //System.out.println("Ray init evol = "+ ste.getIdEvolution().keySet() );
+			  // System.out.println("Ray values evol = "+ ste.getIdEvolution().values() );
+			  Integer concept = (Integer)concepts.toArray()[0];
+			  if (! data.getConcepts().get(concept).isTerminal()   ) {
+			  switch (data.getConcepts().get(concept).getOperator()) {
+			  case INTERSECTION:
+				System.out.println("Tip INTERSECTION Rule ");
+				sat = st.intersectionRuleForTip(concept, ray, ste, changed,  data);
+			        //if(sat!=st) 
+			        //   oldNews.put(ray, (Integer)newConcepts.toArray()[0] );
+				break;
+			  case UNION:
+				System.out.println("Tip UNION Rule ");				
+				sat = st.unionRuleForTip(concept, ray, ste, changed, data);
+				break;
+			  case ALL:
+				System.out.println("Tip ALL Rule ");
+				sat = st.allRuleForTip(concept, ray, ste, changed,  data);
+				sat = sat.transRuleForTip(concept, ray, ste, changed,   data);
+				break;
+			  case MAX:
+				System.out.println("Tip MAX Rule ");
+				sat = st.choiceRuleForTip(concept, ray, ste, changed, data);
+				break;
+			  default:
+				//System.out.println("Tip NO Rule ");
+				break;
+			  }
+		          }
+			  if(! st.equals(sat)) {
+			     //when tip saturation changes something, this may lead to need to saturate core
+			     tipRuleApplications++;
+			     
+		             if(sat==null) {
+				return null;
+			     }
+			     data.flushRayAndCore(sat);
+			    
+			     st = sat;
+			  } else {
+			     //"saturated = true" only if "saturated = true" for each iteration of for 
+			     tipCheckApplications++;
+			  }
+			   
+			  ste.addProcessedConceptForRay(concept, ray, data);
+			  concepts = ste.getFreshConceptsForRay().get(ray);
+			  //System.out.println("Tip concepts fresh = ");
+			  //for(Integer i: concepts){System.out.println(data.getConcepts().get(i).toString(data) ); }
+		     } //while(! concepts.isEmpty() )
+	           } //for
+		return st;
+	}
+
+	public Startype applyRulesToCore(Startype st,  StartypeEvolution ste, ReasonerData data) {
+	       Set<Integer> concepts = new HashSet<Integer>(ste.getFreshCoreConcepts());
+	       Startype sat = st;
+	       //Map<Integer, Integer> allRuleVisited = new HashMap<Integer, Integer>(); 
+		      while( !concepts.isEmpty() ) {
+		          //System.out.println(" WHILE Core ");
+		      //for(Integer concept :  concepts) {
+			  Integer concept = (Integer)concepts.toArray()[0];
+			  boolean changed = false;
+		          //System.out.println("Core ste key= " + ste.getIdEvolution().keySet().toString() );
+		          //System.out.println("Core ste  values= " + ste.getIdEvolution().values().toString() );
+			   //System.out.println("Rays= " + st.getRays().keySet().toString() );
+			  //System.out.println("Non changed Applications= " + coreCheckApplications );
+			  //System.out.println("Changed Applications= " + coreRuleApplications + ", " +data.getConcepts().get(concept).toString(data));
+			  //System.out.println("Startypes= " + data.getStartypes().keySet().size() + ",  Rays =" + data.getRays().keySet().size() + ", Concepts = " + data.getConcepts().keySet().size()  + ", Cores = " + data.getCores().keySet().size() + ", Ridges = " + data.getRidges().keySet().size()  );
+
+
+			  //System.out.println("Core Rays = "+st.getRays().keySet());
+		          //System.out.println("Core Ray init evol = "+ ste.getIdEvolution().keySet() );
+			  // System.out.println("Core Ray values evol = "+ ste.getIdEvolution().values() );
+			  if (! data.getConcepts().get(concept).isTerminal()  ) {
+			   
+			  switch (data.getConcepts().get(concept).getOperator()) {
+			  case INTERSECTION:
+				System.out.println("core INTERSECTION Rule ");
+				sat = st.intersectionRule(concept, ste, changed,  data);
+			        ste.addCoreProcessed(concept, data);
+				break;
+			  case UNION:
+			        System.out.println("core UNION Rule ");
+				sat = st.unionRule(concept, ste, changed,  data);
+				ste.addCoreProcessed(concept, data);
+				break;
+			  case SOME:
+			        System.out.println("core SOME Rule on"+ data.getConcepts().get(concept).toString(data));
+				sat = st.someRule(concept, ste,  changed, data);
+			        ste.addCoreProcessed(concept, data);
+				 
+				break;
+			  case ALL:
+				System.out.println("core ALL Rule on "+ data.getConcepts().get(concept).toString(data));
+				 
+				sat = st.allRule(concept, ste, changed, data);
+				sat = sat.transRule(concept, ste, changed, data);
+				 
+				break;
+			  case MIN:
+				System.out.println("core MIN Rule ");
+				sat = st.minRule(concept, ste, changed, data);
+				ste.addCoreProcessed(concept, data);
+				break;
+			  case MAX:
+				System.out.println("core MAX Rule on "+ data.getConcepts().get(concept).toString(data));
+				sat = st.maxRule(concept, ste, changed,  data);
+				sat = sat.choiceRule(concept, ste,  changed,  data);
+			    	
+				break;
+			  default: 
+				//System.out.println("core NO Rule ");
+				//System.out.println("concept="+data.getConcepts().get(concept).toString(data));
+				break;
+			  }
+		          }
+			  if(! st.equals(sat)) {
+			     //when core saturation changes something, this may lead to need to saturate tips 
+			     coreRuleApplications++; 
+		             if(sat==null) {
+				return null;			        
+			     }
+			     data.flushRayAndCore(sat);  
+			     st = sat;
+			  } else {
+			     //"saturated = true" only if "saturated = true" for each iteration of for 
+			     coreCheckApplications++;
+			  }
+			  //if(changed)
+			  //System.out.println("concepts fresh = ");
+			  //for(Integer i: concepts){System.out.println(data.getConcepts().get(i).toString(data) ); }
+		          ste.addCoreProcessed(concept, data);
+			  concepts = ste.getFreshCoreConcepts();
+		   } //while( !concepts.isEmpty() ) 
+                    
+		   for(Integer concept : ste.getAllMaxConcepts()) {
+                          //System.out.println(" FOR Core ");
+			  boolean changed = false;
+			  //System.out.println("Non changed Applications= " + coreCheckApplications );
+			  //System.out.println("Changed Applications= " + coreRuleApplications + ", " +data.getConcepts().get(concept).toString(data));
+			  //System.out.println("Startypes= " + data.getStartypes().keySet().size() + ",  Rays =" + data.getRays().keySet().size() + ", Concepts = " + data.getConcepts().keySet().size()  + ", Cores = " + data.getCores().keySet().size() + ", Ridges = " + data.getRidges().keySet().size()  );
+			   
+			  switch (data.getConcepts().get(concept).getOperator()) {
+			   
+			  case ALL:
+				System.out.println("core FOR ALL Rule on "+ data.getConcepts().get(concept).toString(data));
+				sat = st.allRule(concept, ste, changed, data);
+				sat = sat.transRule(concept, ste, changed, data);
+				break;
+			  case MAX:
+				System.out.println("core FOR MAX Rule on "+ data.getConcepts().get(concept).toString(data));
+				sat = st.maxRule(concept, ste, changed,  data);
+				sat = sat.choiceRule(concept, ste,  changed,  data);
+				break;
+			  default: 
+				//System.out.println("core NO Rule ");
+				//System.out.println("concept="+data.getConcepts().get(concept).toString(data));
+				break;
+			  }
+			  if(! st.equals(sat)) {
+			     //when core saturation changes something, this may lead to need to saturate tips 
+			     coreRuleApplications++; 
+		             if(sat==null) {
+				return null;			        
+			     }
+			     data.flushRayAndCore(sat);  
+			     st = sat;
+			  } else {
+			     //"saturated = true" only if "saturated = true" for each iteration of for 
+			     coreCheckApplications++;
+			  }
+		   }
+	       return st;
 	}
 	
-	/**
-	 * Initialization of a standard startype, with only the concepts of the
-	 * ontology in the core (rules have been applied), plus those the user wants
-	 * to add.
-	 * 
-	 * @param data
-	 *            The data of the ontology.
-	 * @param concepts
-	 *            The concepts to be added in the core of the startype.
-	 * @return The startype initialized.
-	 */
-	/*
-	public Startype init(ReasonerData data, ConceptLabel concepts) {
-		Startype base = new Startype(lastIdOfStartype);
-		List<Concept> res;
-		boolean clash = false;
-
-		lastIdOfStartype++;
-		if (concepts != null)
-			base.addToCore(new ArrayList<Concept>(concepts));
-
-		res = this.applyStandardRules(base, data, clash);
-		//there is a clash (invalid) in the core
-		if( clash ) 
-		    return null;
-
-		if (res.size() != 0)
-			base.addToCore(this.applyRulesRecursive(base, data, res));
-
-		// apply the rules to the alternatives of the startype
-		// (non-determinism)
-		this.applyRulesToDeterminist(base, data);
-
-		data.addCore(data.giveCoreIdentifier(base.getCore()));
-		for (Ray ray : base.getRays())
-			data.addRidge(data.giveRidgeIdentifier(ray.getRidge()));
-		base.setSaturated();
-
-		stars.add(base);
-
-		return base;
+	//This method is used for avoiding nondeterminism
+	//Its tries to saturate "st" and returns null if the result is invalid
+	public Startype applyRules(Startype st, ReasonerData data) {
+		Startype sat = st;
+		boolean saturatedTip = false;
+		//boolean saturatedAllTips = false;
+		boolean saturatedCore = false;
+		StartypeEvolution ste = new StartypeEvolution(st, data);
+                while(! saturatedCore || ! saturatedTip ) {
+		      sat = applyRulesToCore(st, ste, data);
+		      //for terminates when a new startype is created, or no new startype is created  for all concepts visited 
+		      if(sat==st) 
+		         saturatedCore = true;
+                      st = sat;
+		      sat = applyRulesToTips(st, ste, data);
+		      if(sat==st) 
+		         saturatedTip = true;
+                      st = sat;
+	        }//while(! saturatedCore || ! saturatedTip )
+	        if(st==null)
+		  return null;
+	        else { 
+		  System.out.println("Checking for clashes ................................................");
+		  st.setSaturated(true);
+		  if(st.isValidForAll(data) )
+	             st.setValid(new Boolean(true));
+		  else
+		     st.setValid(new Boolean(false));
+		  return st; 
+	        }
 	}
-	*/
+
+	 
 	/**
 	 * Adds all nominal startypes to the list of the frame. Added startypes HAVE
 	 * applied the rules.
@@ -574,9 +738,7 @@ System.out.println("Rule MAX and CH for startype "+ s.getIdentifier() + " on "+ 
 		return id;
 	}
 	
-	public Set<Startype> getStartypes() {
-		return stars;
-	}
+	 
 	
 	/**
 	 * Gives the last identifier available to create a new startype.
@@ -584,16 +746,18 @@ System.out.println("Rule MAX and CH for startype "+ s.getIdentifier() + " on "+ 
 	 * @return The last identifier valid for a startype. If the created startype
 	 *         is stored, this value must be incremented.
 	 */
+	/*
 	public int getLastIDOfStartype() {
 		return lastIdOfStartype;
 	}
-
+	*/
 	/**
 	 * Updates the last identifier to be used for the creation of a startype.
 	 * Must be used each time a startype is created THEN STORED.
 	 */
+	/*
 	public void incrementLastIDOfStartype() {
 		lastIdOfStartype++;
 	}
-
+	*/
 }

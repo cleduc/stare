@@ -84,7 +84,9 @@ public class ConceptLabel  {
 	public  ConceptLabel getNewConceptLabel(Set<Integer> lc, ReasonerData data) {
 		ConceptLabel cl = new ConceptLabel(this.conceptIds);
 		cl.addAll(lc);
+		//System.out.println("content core="+ cl.getConceptIds().toString() );
 		cl = data.addCore(cl);
+		
 		return cl;
  	}
 

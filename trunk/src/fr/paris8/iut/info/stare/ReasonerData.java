@@ -55,21 +55,40 @@ public class ReasonerData {
 	private Map<Integer, Startype> starsByInt;
 
 	/**
+	 *  Map of invalid startypes
+	 */
+	private Map<Integer, Startype> clashStars;
+
+	/**
 	 * Map containing the different startypes created, and they are grouped in rays
 	 * 
 	 */
-	private Map<Integer, Set<Startype>> starsByRay;
+	private Map<Integer, Set<Integer>> starsByRay;
  
 	// names for SOME  
-        private Map<Integer, Set<Integer>> someNames;
+        private Map<Integer, List<Integer>> someNames;
  
 	// names for  MIN
-        private Map<Integer, Set<Integer>> minNames;
+        private Map<Integer, List<Integer>> minNames;
 	// names added for MIN and SOME
         private Set<String> terminalConceptNames;
+
+	//public int newSome=0;
+	//public int newMin =0;
 	/**
 	 * The default constructor.
 	 */
+
+	private int rayId = 0;
+	private int coreId = 0;
+
+	public int getNewRayId(){
+		return rayId++;
+	}
+	public int getNewCoreId(){
+		return coreId++;
+	}
+
 	public ReasonerData() {
 		roles = new HashMap<Integer, Role>();
 		ridges = new HashMap<Integer, RoleLabel>();
@@ -77,15 +96,15 @@ public class ReasonerData {
 		concepts = new HashMap<Integer, Concept>();
 		cores = new HashMap<Integer, ConceptLabel>();
 		starsByInt = new HashMap<Integer, Startype>();
-		starsByRay = new HashMap<Integer, Set<Startype>>();
+		starsByRay = new HashMap<Integer, Set<Integer>>();
 		roleAxioms = new HashMap<Integer, RoleAxiom>();
 		conceptAxioms = new HashMap<Integer, ConceptAxiom>();
 		roleAssertions = new HashMap<Integer, RoleAssertion>();
 		conceptAssertions = new HashMap<Integer, ConceptAssertion>();
 		axiomNNFs = new HashSet<Integer>();
 		setTransitiveClosureOfRoleHierarchy(new TransitiveClosureOfRoleHierarchy(roleAxioms.values(), roles.values()));
-		someNames = new HashMap<Integer,Set<Integer>>();
-		minNames = new HashMap<Integer,Set<Integer>>();
+		someNames = new HashMap<Integer,List<Integer>>();
+		minNames = new HashMap<Integer,List<Integer>>();
 		terminalConceptNames = new HashSet<String>();
 	}
 
@@ -103,7 +122,7 @@ public class ReasonerData {
 		String roleName = "_"+role.getName();
 		String inv =  (role.isInverse() ? "_INVERSE" : "");
 		String trans =  (role.isTransitiveClosure() ? "_TRANSITIVECLOSURE" : "");
-		Set<Integer> s = new HashSet<Integer>();
+		List<Integer> sSome = new ArrayList<Integer>(2);
 		Concept newConcept=null;
 		switch(concepts.get(concept).getOperator()) {  
 		case  SOME :
@@ -111,38 +130,43 @@ public class ReasonerData {
 		  while(isConceptName(name)) name=name+"0";
 		  newConcept = new Concept(name, -1, false, false);
 		  newConcept = addConcept(newConcept);
-		  s.add(newConcept.getIdentifier());
+		  sSome.add(newConcept.getIdentifier());
 		  name = concept+"_SOME" + inv +  trans + roleName+ "_" +"1";
 		  while(isConceptName(name)) name=name+"1";
 		  newConcept = new Concept(name, -1, false, false);
 		  newConcept = addConcept(newConcept);
-		  s.add(newConcept.getIdentifier());
-	          setSomeNames(concept, s);
+		  sSome.add(newConcept.getIdentifier());
+	          //setSomeNames(concept, sSome);
+		  someNames.put(concept, sSome);
+		  //newSome++;
 		  break;
 		case  MIN: 
 		  int card = concepts.get(concept).getCardinality();
+		  //newMin += card;
+		  List<Integer> sMin = new ArrayList<Integer>(card+1);
 		  for(int i=0 ; i< card +1 ;i++){
 		     name = concept+"_MIN" + card + inv +  trans + roleName+  "_" +i;
 		     while(isConceptName(name)) name=name+ "0";
 		     newConcept = new Concept(name, -1, false, false);
 		     newConcept = addConcept(newConcept);
-		     s.add(newConcept.getIdentifier());   
+		     sMin.add(newConcept.getIdentifier());   
 		  } 
-		  setMinNames(concept, s);
+		  //setMinNames(concept, sMin);
+		  minNames.put(concept, sMin);
 		default:
                   return;
 		}
 	}  
-
-	public void setSomeNames(Integer concept, Set<Integer> names) {
+/*
+	public void setSomeNames(Integer concept, List<Integer> names) {
 	       someNames.put(concept, names);
 	}
 
-	public void setMinNames(Integer concept, Set<Integer> names) {
+	public void setMinNames(Integer concept, List<Integer> names) {
 	       minNames.put(concept, names);
 	}
-
-	public Set<Integer> getSomeNames(Integer concept) {
+*/
+	public List<Integer> getSomeNames(Integer concept) {
 	       if (someNames.containsKey(concept))
 		   return someNames.get(concept);
 	       else {
@@ -151,7 +175,7 @@ public class ReasonerData {
 	       }
 	}
 
-	public Set<Integer> getMinNames(Integer concept) {
+	public List<Integer> getMinNames(Integer concept) {
 	       if (minNames.containsKey(concept))
 		   return minNames.get(concept);
 	       else {
@@ -160,7 +184,7 @@ public class ReasonerData {
 	       }
 	}
 
-	public Map<Integer, Set<Integer>> getMinNames(){
+	public Map<Integer, List<Integer>> getMinNames(){
 	       return minNames;
 	}
 	public boolean isConceptName(String name){
@@ -379,6 +403,10 @@ public class ReasonerData {
 		return starsByInt;
 	}
 
+	public Map<Integer, Set<Integer>> getStartypesByRay() {
+		return starsByRay;
+	}
+
 	public void setNNFConceptLabel(Integer id) {
 	       NNFConceptLabel = id;
 	}
@@ -446,8 +474,8 @@ public class ReasonerData {
 	public ConceptLabel giveCoreIdentifier(ConceptLabel core) {
 		ConceptLabel cl = this.getCore(core);
 		if (cl == null) {
-			core.setIdentifier(cores.size());
-			//System.out.println("b give = "+ core.getIdentifier());
+			core.setIdentifier(getNewCoreId());
+			//System.out.println("new core in give = "+ core.getIdentifier() );
 			return core;
 		} else {
 			//System.out.println("give = "+ cl.getIdentifier());
@@ -468,6 +496,10 @@ public class ReasonerData {
 		//	return cl;
 		ConceptLabel core = this.giveCoreIdentifier(cl);
 		cores.put(core.getIdentifier(), core);
+		//System.out.println("cores= " + cores.keySet().toString());
+		//System.out.println("concepts= " + concepts.keySet().toString());
+		//System.out.println("new core 2= "+ core.getIdentifier() + ", "+ core.getConceptIds().toString() );
+		//System.out.println("new core in add = "+ core.getIdentifier() +", " + core.toString(this) );
 		return core;
 	}
 
@@ -539,9 +571,8 @@ public class ReasonerData {
 	public Ray giveRayIdentifier(Ray r) {
 		Ray ray = this.getRay(r);
 		if (ray == null) {
-			//System.out.println("b give ray id ="+r.getIdentifier()  );
-			r.setIdentifier(rays.size());
-			//System.out.println("give new ray id =" +r.getIdentifier()  );
+			r.setIdentifier(getNewRayId());
+			//System.out.println("Added ray id="+r.getIdentifier()+", idC="+r.getCoreId()+", idR="+r.getRidgeId()+", idT="+r.getTipId());
 			return r;
 		} else {
 			//System.out.println("old ray id =" +ray.getIdentifier()  );
@@ -557,6 +588,38 @@ public class ReasonerData {
 		return r;
 	}
 
+	public void flushRayAndCore(Startype sts) {
+		Set<Integer> notUsed = new HashSet<Integer>();
+		Set<Integer> notUsedCores = new HashSet<Integer>();
+		Set<Integer> usedCores = new HashSet<Integer>();
+		for(Integer i : getRays().keySet()){
+		    //for(Integer j : sts){
+			//System.out.println("id ray in Data="+i);
+			//System.out.println("id rays in St="+ sts.getRays().keySet());
+			if (! sts.getRays().containsKey(i) ) 
+		              notUsed.add(i);
+		}
+		for(Integer i : notUsed){
+			//System.out.println("Ray deleted ="+i);
+		    getRays().remove(i);
+		}
+		//clean cores
+		usedCores.add( sts.getCoreId() ); 
+		for(Integer i : sts.getRays().keySet()) {
+		        usedCores.add( this.getRays().get(i).getTipId() );
+                }
+
+		for(Integer i : getCores().keySet() ) {
+		    if( ! usedCores.contains(i) )
+		        notUsedCores.add(i);	   
+		}
+
+		for(Integer i : notUsedCores){
+		    if(!i.equals(NNFConceptLabel))
+		       this.getCores().remove(i);
+		}
+		
+	}
 	public Startype getStartype(Startype st) {
 		//if startype is idenfified
 		if (st.getIdentifier() >= 0)
@@ -590,18 +653,17 @@ public class ReasonerData {
 
 		for (Integer r : s.getRays().keySet() ) {    
 	             if( starsByRay.containsKey(r) )
- 		         starsByRay.get(r).add(s);
+ 		         starsByRay.get(r).add(s.getIdentifier());
 		     else {
-			 Set ss = new HashSet<Startype>();
-			 ss.add(s); 
+			 Set<Integer> ss = new HashSet<Integer>();
+			 ss.add(s.getIdentifier()); 
 			 starsByRay.put(r, ss);
 		     }
 		}
 		return s;
 	}
 
-	//It returns a startype that is not expanded (isExpanded==null) and not saturated (isSaturated==true)
-	public Integer getStartypeToExpand() {
+	public Integer getStartypeFromDataToExpand() {
 		for(Integer i : starsByInt.keySet())
 		    if(! starsByInt.get(i).isSaturated() && starsByInt.get(i).getExpanded()==null)
 		      return i; 

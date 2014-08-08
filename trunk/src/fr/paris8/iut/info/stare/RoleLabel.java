@@ -145,8 +145,6 @@ public class RoleLabel {
 		     rInverse = data.addRole(rInverse);	
 		     rl = rl.getNewRoleLabel(rInverse.getIdentifier(), data);
 		}
-
-		
 		return rl;
 	}
 

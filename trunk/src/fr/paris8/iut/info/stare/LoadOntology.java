@@ -131,8 +131,10 @@ public class LoadOntology {
 		ConceptLabel allNNF = new ConceptLabel();
 		for(ConceptAxiom i : reasonerData.getConceptAxioms().values() ) {
 		    //each NNF is identified. This may be already done
-		    Concept c = i.getNNF();
+		    //Concept c = i.getNNF();
+		    Concept c = i.getRightMember();
 		    c = reasonerData.addConcept( c );
+		    reasonerData.getAxiomNNFs().add( new Integer(c.getIdentifier()) );	
 		    reasonerData.getAxiomNNFs().add( new Integer(c.getIdentifier()) );	
 		    allNNF.add( new Integer(c.getIdentifier()) ); 
 		}
@@ -421,6 +423,8 @@ public class LoadOntology {
 				increment++;
 			}
 	}
+	
+	 
 
 	/**
 	 * Stores the axioms dealing with concepts.<br/>
@@ -428,42 +432,30 @@ public class LoadOntology {
 	 */
 	private void makeConceptsFromSubClasses() {
 		OWLDataFactory factory = new OWLDataFactoryImpl();
-		OWLClassExpression expression, subClass = null, superClass = null;
+		OWLClassExpression expression, subClass = null, superClass = null, subClass2 = null, superClass2 = null;
 		//for (OWLClass owlClass : classes.keySet()) {
 			/* dealing with subClass axioms */
 			//for (OWLSubClassOfAxiom subClassOfAxiom : ontology
 			//		.getSubClassAxiomsForSubClass(owlClass)) {
 
-
 			for (OWLAxiom classAxiom : ontology.getAxioms()) {
 
 				//System.out.println("type="+ classAxiom.getAxiomType().toString());
 
-				if(classAxiom.getAxiomType().equals(AxiomType.SUBCLASS_OF) ) {
-					/*
-					case DISJOINT_CLASSES:
-						subClass =  classAxiom.getSubClass();
-						superClass = classAxiom.getSuperClass();
-						expression = factory.getOWLObjectUnionOf(
-						factory.getOWLObjectComplementOf(subClass), superClass)
-						.getNNF();
-						break;
-					case EQUIVALENCE_CLASSES:
-					*/
-					
-				subClass = ((OWLSubClassOfAxiom)classAxiom).getSubClass();
-				superClass =  ((OWLSubClassOfAxiom)classAxiom).getSuperClass();
-				expression = factory.getOWLObjectUnionOf(
+				if(classAxiom.getAxiomType().equals(AxiomType.SUBCLASS_OF) ) {	
+					subClass = ((OWLSubClassOfAxiom)classAxiom).getSubClass();
+					superClass =  ((OWLSubClassOfAxiom)classAxiom).getSuperClass();
+					expression = factory.getOWLObjectUnionOf(
 						factory.getOWLObjectComplementOf(subClass), superClass).getNNF();
-				Concept c1 = getConceptFromClassRecursive(subClass); 
+					Concept c1 = getConceptFromClassRecursive(subClass); 
 				//System.out.println("c1="+ c1.toString(reasonerData) + ", id=" +c1.getIdentifier());
-				Concept c2 = getConceptFromClassRecursive(superClass);
+					Concept c2 = getConceptFromClassRecursive(superClass);
 				//System.out.println("c2="+ c2.toString(reasonerData) + ", id=" +c2.getIdentifier());
-				Concept c3 = getConceptFromClassRecursive(expression);
+					Concept c3 = getConceptFromClassRecursive(expression);
 				//System.out.println("c3="+ c3.toString(reasonerData) + ", id=" +c3.getIdentifier());
-				reasonerData.addConceptAxiom(new ConceptAxiom(increment,c1,c2,c3));
-				increment++;
-			}
+					reasonerData.addConceptAxiom(new ConceptAxiom(increment,c1,c2,c3));
+					increment++;
+			        }
 
 			/* dealing with the disjoint axioms */
 			/*
@@ -471,59 +463,46 @@ public class LoadOntology {
 				 * separately.
 				 */
 			//for (OWLDisjointClassesAxiom disjointClassesAxiom : ontology.getDisjointClassesAxioms(owlClass)) {
-			/*
-			for (OWLDisjointClassesAxiom disjointClassesAxiom : ontology.getDisjointClassesAxioms()) {
-				
-				for (OWLSubClassOfAxiom subClassOfAxiom : disjointClassesAxiom
-						.asOWLSubClassOfAxioms()) {
-					subClass = subClassOfAxiom.getSubClass();
-					superClass = subClassOfAxiom.getSuperClass();
+			
+			        if(classAxiom.getAxiomType().equals(AxiomType.DISJOINT_CLASSES) ) {	
+					Set<OWLSubClassOfAxiom> subClassesAxioms = ((OWLDisjointClassesAxiom)classAxiom).asOWLSubClassOfAxioms();
+					for(OWLSubClassOfAxiom ax : subClassesAxioms){
+					subClass = ax.getSubClass();
+					superClass = ax.getSuperClass();
 					expression = factory.getOWLObjectUnionOf(
 							factory.getOWLObjectComplementOf(subClass),
 							superClass).getNNF();
-					reasonerData.addConceptAxiom(new ConceptAxiom(increment,
-							getConceptFromClassRecursive(subClass),
-							getConceptFromClassRecursive(superClass),
-							getConceptFromClassRecursive(expression)));
+					Concept c1 = getConceptFromClassRecursive(subClass); 
+					Concept c2 = getConceptFromClassRecursive(superClass);
+					Concept c3 = getConceptFromClassRecursive(expression);
+				        reasonerData.addConceptAxiom(new ConceptAxiom(increment,c1,c2,c3));
+					//reasonerData.addConceptAxiom(new ConceptAxiom(increment,
+					//		getConceptFromClassRecursive(subClass),
+					//		getConceptFromClassRecursive(superClass),
+					//		getConceptFromClassRecursive(expression)));
 					increment++;
-				}
-			}
-			*/
-			/* dealing with equivalence axioms */
-			/*
-			for (OWLEquivalentClassesAxiom equivalentClassesAxiom : ontology
-					.getEquivalentClassesAxioms(owlClass)) {
-				int i = 0;
-
-				// get the classes in the axiom (only 2)
-				for (OWLClass c : equivalentClassesAxiom.getNamedClasses()) {
-					if (i == 0)
-						subClass = c;
-					else
-						superClass = c;
-					i++;
-					if (i == 2)
-						break;
+					}
 				}
 
-				expression = factory.getOWLObjectUnionOf(
-						factory.getOWLObjectComplementOf(subClass), superClass)
-						.getNNF();
-				reasonerData.addConceptAxiom(new ConceptAxiom(increment,
-						getConceptFromClassRecursive(subClass),
-						getConceptFromClassRecursive(superClass),
-						getConceptFromClassRecursive(expression)));
-
+				/* dealing with equivalence axioms */
+			
+			        if(classAxiom.getAxiomType().equals(AxiomType.EQUIVALENT_CLASSES) ) {	
+				Set<OWLSubClassOfAxiom> subClassOfAxioms =  ((OWLEquivalentClassesAxiom)classAxiom).asOWLSubClassOfAxioms();
+				for(OWLSubClassOfAxiom ax : subClassOfAxioms) {
+				subClass = ax.getSubClass();
+				superClass = ax.getSuperClass();
+				 
 				expression = factory.getOWLObjectUnionOf(
 						factory.getOWLObjectComplementOf(superClass), subClass)
 						.getNNF();
-				reasonerData.addConceptAxiom(new ConceptAxiom(increment,
-						getConceptFromClassRecursive(superClass),
-						getConceptFromClassRecursive(subClass),
-						getConceptFromClassRecursive(expression)));
+			        Concept c1 = getConceptFromClassRecursive(subClass); 
+				Concept c2 = getConceptFromClassRecursive(superClass);
+				Concept c3 = getConceptFromClassRecursive(expression);
+				reasonerData.addConceptAxiom(new ConceptAxiom(increment,c1,c2,c3));
+                                }
+				 
+			        }
 			}
-			*/
-		}
 	}
 
 	/**
